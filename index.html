@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TCGPotes</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="bg-bubbles" id="bgBubbles"></div>
+
+<!-- Musique de fond -->
+<audio id="bgMusic" src="musique/musique.mp3" loop></audio>
+
+<!-- ══ PAGE : PROFIL / CONNEXION ══ -->
+<div class="page active" id="page-profile">
+  <div class="profile-screen" id="profileScreen">
+    <!-- Formulaire création / connexion -->
+    <div class="profile-logo">
+      <span class="logo-icon-big">🃏</span>
+      <span class="logo-wordmark">TCGPotes</span>
+    </div>
+    <div class="profile-card" id="profileForm">
+      <div class="profile-tabs">
+        <button class="ptab active" id="tabLogin" onclick="switchAuthTab('login')">Connexion</button>
+        <button class="ptab" id="tabRegister" onclick="switchAuthTab('register')">Créer un compte</button>
+      </div>
+      <div id="authLogin">
+        <input class="p-input" id="loginPseudo" placeholder="Pseudo" maxlength="20">
+        <button class="btn-profile-action" onclick="loginUser()">🎮 Jouer !</button>
+        <div class="profile-hint">Entrez votre pseudo pour retrouver votre progression.</div>
+      </div>
+      <div id="authRegister" style="display:none">
+        <input class="p-input" id="regPseudo" placeholder="Pseudo (2–20 caractères)" maxlength="20">
+        <button class="btn-profile-action" onclick="registerUser()">✨ Créer mon compte</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE : ACCUEIL ══ -->
+<div class="page" id="page-home">
+  <div class="home-top">
+    <div class="app-logo" onclick="showPage('profile-view')">
+      <span class="logo-icon">🃏</span>
+      <span class="logo-text">TCGPotes</span>
+    </div>
+    <div class="home-top-right">
+      <div class="user-chip" id="userChip" onclick="showPage('profile-view')">
+        <span class="user-avatar" id="userAvatar">😀</span>
+        <span class="user-pseudo" id="userPseudoChip">?</span>
+      </div>
+      <button class="icon-btn" onclick="toggleDark()" id="themeBtn" title="Mode sombre">🌙</button>
+      <button class="icon-btn" onclick="toggleMusic()" id="musicBtn" title="Musique">🔇</button>
+    </div>
+  </div>
+
+  <div class="ext-selector-strip" id="extStrip" onclick="showPage('extensions')">
+    <span id="extStripIcon">🏫</span>
+    <span id="extStripName">Lycée</span>
+    <span class="ext-strip-arrow">›</span>
+  </div>
+
+  <div class="booster-area">
+    <div class="booster-wrapper" id="boosterWrapper">
+      <div class="booster-shine"></div>
+      <div class="booster-placeholder" id="boosterPlaceholder">
+        <div class="booster-deco-ring"></div>
+        <div class="booster-symbol">✦</div>
+        <div class="booster-ext-name" id="boosterExtName">Lycée</div>
+      </div>
+    </div>
+
+    <div class="charges-display">
+      <div class="charges-label">⚡ Recharges</div>
+      <div class="charges-pips" id="chargePips">
+        <div class="pip" id="pip0"></div>
+        <div class="pip" id="pip1"></div>
+        <div class="pip" id="pip2"></div>
+        <div class="pip" id="pip3"></div>
+      </div>
+      <div class="charges-timer" id="chargesTimer">Prochaine dans <span id="timerDisplay">--:--:--</span></div>
+    </div>
+
+    <button class="btn-open" id="btnOpen" onclick="openBooster()">🎁 Ouvrir le Booster !</button>
+  </div>
+</div>
+
+<!-- ══ PAGE : COLLECTION ══ -->
+<div class="page" id="page-collection">
+  <div class="page-header-bar">
+    <div class="page-header-title">🃏 Collection</div>
+    <div class="collection-count"><span id="ownedCount">0</span>/<span id="totalCount">0</span></div>
+  </div>
+  <div class="extension-label" id="collectionExtLabel">🏫 Extension Lycée</div>
+  <div class="collection-grid" id="collectionGrid"></div>
+</div>
+
+<!-- ══ PAGE : EXTENSIONS ══ -->
+<div class="page" id="page-extensions">
+  <div class="page-header-bar">
+    <div class="page-header-title">🌟 Extensions</div>
+    <button class="back-btn" onclick="showPage('home')">✕</button>
+  </div>
+  <div class="ext-list" id="extList"></div>
+</div>
+
+<!-- ══ PAGE : PROFIL JOUEUR ══ -->
+<div class="page" id="page-profile-view">
+  <div class="page-header-bar">
+    <div class="page-header-title">👤 Mon Profil</div>
+    <button class="back-btn" onclick="showPage('home')">✕</button>
+  </div>
+
+  <div class="profile-view-card">
+    <div class="profile-view-avatar" id="pvAvatar">😀</div>
+    <div class="profile-view-pseudo" id="pvPseudo">Joueur</div>
+    <div class="profile-view-level" id="pvLevel">Niv. 1 · Apprenti</div>
+    <div class="profile-view-code">
+      Code ami : <strong id="pvFriendCode">——</strong>
+      <button class="copy-code-btn" onclick="copyFriendCode()">📋</button>
+    </div>
+  </div>
+
+  <div class="profile-stats-grid">
+    <div class="stat-card"><div class="stat-val" id="statCards">0</div><div class="stat-lbl">Cartes</div></div>
+    <div class="stat-card"><div class="stat-val" id="statUniq">0</div><div class="stat-lbl">Uniques</div></div>
+    <div class="stat-card"><div class="stat-val" id="statPacks">0</div><div class="stat-lbl">Boosters</div></div>
+    <div class="stat-card"><div class="stat-val" id="statFriends">0</div><div class="stat-lbl">Amis</div></div>
+  </div>
+
+  <!-- Avatar selector -->
+  <div class="section-title">🎭 Avatar</div>
+  <div class="avatar-grid" id="avatarGrid"></div>
+
+  <!-- Friends section -->
+  <div class="section-title">👫 Amis</div>
+  <div class="friends-add">
+    <input class="p-input" id="friendCodeInput" placeholder="Code ami (ex: ABC-1234)" maxlength="8" style="flex:1">
+    <button class="btn-add-friend" onclick="addFriend()">+ Ajouter</button>
+  </div>
+  <div class="friends-list" id="friendsList"></div>
+
+  <!-- Logout -->
+  <div style="padding:12px 16px 4px">
+    <button class="btn-save btn-save-reset" onclick="confirmLogout()">🚪 Changer de compte</button>
+  </div>
+</div>
+
+<!-- ══ PAGE : PARAMÈTRES ══ -->
+<div class="page" id="page-settings">
+  <div class="page-header-bar">
+    <div class="page-header-title">⚙️ Réglages</div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">🎨 Apparence</div>
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-icon">🌙</div>
+        <div class="settings-row-info">
+          <div class="settings-row-title">Mode sombre</div>
+          <div class="settings-row-sub">Thème nuit</div>
+        </div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="darkToggle" onchange="setDark(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-icon">🌍</div>
+        <div class="settings-row-info">
+          <div class="settings-row-title">Langue</div>
+          <div class="settings-row-sub" id="langSubLabel">Français</div>
+        </div>
+      </div>
+      <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
+        <option value="fr">🇫🇷 Français</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="de">🇩🇪 Deutsch</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">🔊 Audio</div>
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-icon">🎵</div>
+        <div class="settings-row-info">
+          <div class="settings-row-title">Musique</div>
+          <div class="settings-row-sub" id="volumeLabel">70%</div>
+        </div>
+      </div>
+      <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70" style="--val:70%">
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-icon">✨</div>
+        <div class="settings-row-info">
+          <div class="settings-row-title">Animations</div>
+          <div class="settings-row-sub">Effets visuels</div>
+        </div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="animToggle" checked onchange="saveSetting('animations', this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">💾 Données</div>
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-icon">📤</div>
+        <div class="settings-row-info">
+          <div class="settings-row-title">Exporter</div>
+          <div class="settings-row-sub">Copier la sauvegarde</div>
+        </div>
+      </div>
+      <button class="mini-btn" onclick="exportSave()">Copier</button>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-icon">📥</div>
+        <div class="settings-row-info">
+          <div class="settings-row-title">Importer</div>
+          <div class="settings-row-sub">Restaurer</div>
+        </div>
+      </div>
+      <button class="mini-btn" onclick="showImportModal()">Coller</button>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-icon">🔔</div>
+        <div class="settings-row-info">
+          <div class="settings-row-title">Alertes recharge</div>
+          <div class="settings-row-sub">Notifications</div>
+        </div>
+      </div>
+      <button class="mini-btn" onclick="requestNotifPermission()">Activer</button>
+    </div>
+    <div style="padding:8px 0">
+      <button class="btn-save btn-save-reset" onclick="confirmReset()">🗑️ Réinitialiser la sauvegarde</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar">
+  <div class="nav-item" onclick="showPage('home')" id="nav-home">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label" data-i18n="nav_home">Accueil</div>
+  </div>
+  <div class="nav-item" onclick="showPage('collection')" id="nav-collection">
+    <div class="nav-icon">🃏</div>
+    <div class="nav-label" data-i18n="nav_collection">Collection</div>
+  </div>
+  <div class="nav-item" onclick="showPage('profile-view')" id="nav-profile-view">
+    <div class="nav-icon">👤</div>
+    <div class="nav-label" data-i18n="nav_profile">Profil</div>
+  </div>
+  <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label" data-i18n="nav_settings">Réglages</div>
+  </div>
+</nav>
+
+<!-- ══ OVERLAY BOOSTER ══ -->
+<div class="overlay" id="boosterOverlay">
+  <div class="particles" id="particles"></div>
+  <div class="opening-stage" id="stageBooster">
+    <div class="booster-tap-container" id="boosterTapVisual" onclick="startReveal()">
+      <div class="booster-placeholder booster-tap">
+        <div class="booster-deco-ring"></div>
+        <div class="booster-symbol" style="font-size:60px">✦</div>
+        <div class="booster-ext-name" id="boosterTapExtName">Lycée</div>
+      </div>
+    </div>
+    <p class="tap-hint" data-i18n="tap_open">👆 Appuie pour ouvrir !</p>
+  </div>
+
+  <div class="cards-reveal-stage" id="stageCards" style="display:none">
+    <div class="reveal-counter" id="revealCounter">Carte 1 / 5</div>
+    <div class="revealed-card-wrap" id="revealedCardWrap">
+      <div class="revealed-card" id="revealedCard"><div id="revealedCardContent"></div></div>
+      <div class="card-info-reveal">
+        <div class="card-name-label" id="revealedCardName"></div>
+        <div class="card-rarity-badge" id="revealedCardRarity"></div>
+      </div>
+    </div>
+    <button class="btn-next-card" id="btnNextCard" onclick="nextReveal()">Suivant ➡️</button>
+  </div>
+
+  <div class="recap-stage" id="stageRecap" style="display:none">
+    <div class="recap-title">🎉 Ton Booster !</div>
+    <div class="recap-grid" id="recapGrid"></div>
+    <button class="btn-collect-all" onclick="collectAll()">✅ Tout ajouter !</button>
+  </div>
+</div>
+
+<!-- ══ MODAL CARTE ══ -->
+<div class="card-modal-overlay" id="cardModal" onclick="closeCardModal()">
+  <div class="card-modal-inner" onclick="event.stopPropagation()">
+    <div class="card-modal-img" id="cardModalImg"></div>
+    <div class="card-modal-info">
+      <div class="card-modal-name" id="cardModalName"></div>
+      <div class="card-rarity-badge" id="cardModalRarity"></div>
+      <div class="card-modal-count" id="cardModalCount"></div>
+    </div>
+    <button class="btn-modal-close" onclick="closeCardModal()">✕ Fermer</button>
+  </div>
+</div>
+
+<!-- ══ MODAL RESET ══ -->
+<div class="card-modal-overlay" id="resetModal">
+  <div class="card-modal-inner" onclick="event.stopPropagation()">
+    <div style="font-size:48px;text-align:center">⚠️</div>
+    <div class="card-modal-name">Réinitialiser ?</div>
+    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px">Toutes tes cartes et recharges seront supprimées. Cette action est <strong>irréversible</strong> !</p>
+    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doReset()">🗑️ Oui, tout effacer</button>
+    <button class="btn-modal-close" onclick="closeModal('resetModal')">✕ Annuler</button>
+  </div>
+</div>
+
+<!-- ══ MODAL IMPORT ══ -->
+<div class="card-modal-overlay" id="importModal">
+  <div class="card-modal-inner" onclick="event.stopPropagation()">
+    <div class="card-modal-name">📥 Importer</div>
+    <textarea class="save-data-area" id="importDataArea" placeholder="Colle ton code ici..." style="width:100%;min-height:80px;margin:8px 0"></textarea>
+    <button class="btn-save btn-save-import" style="margin-bottom:8px" onclick="importSave()">✅ Importer</button>
+    <button class="btn-modal-close" onclick="closeModal('importModal')">✕ Annuler</button>
+  </div>
+</div>
+
+<!-- ══ MODAL LOGOUT ══ -->
+<div class="card-modal-overlay" id="logoutModal">
+  <div class="card-modal-inner" onclick="event.stopPropagation()">
+    <div style="font-size:48px;text-align:center">🚪</div>
+    <div class="card-modal-name">Changer de compte ?</div>
+    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px">Ta progression est sauvegardée localement.</p>
+    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doLogout()">🚪 Oui, déconnecter</button>
+    <button class="btn-modal-close" onclick="closeModal('logoutModal')">✕ Annuler</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
