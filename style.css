@@ -675,3 +675,277 @@ body {
   white-space:nowrap; box-shadow:0 6px 24px var(--card-shadow);
 }
 .toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ══════════════════
+   LOADING SCREEN
+══════════════════ */
+.loading-screen {
+  position:fixed; inset:0; z-index:500;
+  background:var(--bg);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:16px;
+}
+.loading-logo { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.loading-spinner {
+  width:40px; height:40px; border-radius:50%;
+  border:4px solid var(--border);
+  border-top-color:var(--purple);
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-text { font-size:14px; font-weight:700; color:var(--text-muted); }
+
+/* ══════════════════
+   AUTH SCREEN — v2
+══════════════════ */
+.auth-screen {
+  min-height:100dvh; display:flex; flex-direction:column;
+  align-items:center; justify-content:flex-end;
+  padding:0 0 env(safe-area-inset-bottom,0px);
+  background:linear-gradient(160deg,#0f0a1e 0%,#1a0a2e 40%,#0d1b3e 100%);
+  position:relative; overflow:hidden;
+}
+
+/* Cartes flottantes déco */
+.auth-bg-deco { position:absolute; inset:0; pointer-events:none; z-index:0; }
+.auth-card-float {
+  position:absolute; border-radius:8px;
+  animation:authCardFloat linear infinite;
+}
+.auth-card-1 {
+  width:55px; height:75px; top:8%; left:12%;
+  background:linear-gradient(135deg,#7c5cfc,#b45cfc);
+  opacity:0.18; transform:rotate(-15deg);
+  animation-duration:14s; animation-delay:-2s;
+}
+.auth-card-2 {
+  width:45px; height:62px; top:18%; right:14%;
+  background:linear-gradient(135deg,#d4af37,#f5d67a);
+  opacity:0.22; transform:rotate(20deg);
+  animation-duration:18s; animation-delay:-7s;
+}
+.auth-card-3 {
+  width:38px; height:52px; top:35%; left:72%;
+  background:linear-gradient(135deg,#f472b6,#fb923c);
+  opacity:0.15; transform:rotate(-8deg);
+  animation-duration:22s; animation-delay:-12s;
+}
+@keyframes authCardFloat {
+  0%   { transform:rotate(var(--rot,0deg)) translateY(0px); }
+  50%  { transform:rotate(var(--rot,0deg)) translateY(-18px); }
+  100% { transform:rotate(var(--rot,0deg)) translateY(0px); }
+}
+.auth-card-1 { --rot:-15deg; }
+.auth-card-2 { --rot:20deg; }
+.auth-card-3 { --rot:-8deg; }
+
+/* Hero logo */
+.auth-hero {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:40px 20px 24px; position:relative; z-index:1;
+}
+.auth-logo-icon {
+  width:88px; height:88px;
+  filter:drop-shadow(0 8px 32px rgba(124,92,252,0.6));
+  margin-bottom:14px;
+  animation:logoPulse 3s ease-in-out infinite;
+}
+.auth-logo-icon svg { width:100%; height:100%; }
+@keyframes logoPulse {
+  0%,100% { filter:drop-shadow(0 8px 32px rgba(124,92,252,0.5)); transform:scale(1); }
+  50%      { filter:drop-shadow(0 12px 48px rgba(124,92,252,0.9)); transform:scale(1.04); }
+}
+.auth-logo-text {
+  font-family:'Fredoka One',cursive; font-size:38px; letter-spacing:1px;
+  background:linear-gradient(135deg,#a78bfa,#f472b6,#d4af37);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  line-height:1;
+}
+.auth-logo-sub {
+  font-size:12px; color:rgba(255,255,255,0.4); font-weight:700;
+  letter-spacing:0.15em; text-transform:uppercase; margin-top:6px;
+}
+
+/* Auth card bottom sheet */
+.auth-card {
+  width:100%; max-width:480px;
+  background:rgba(20,14,40,0.96);
+  border:1px solid rgba(124,92,252,0.25);
+  border-radius:32px 32px 0 0;
+  padding:28px 24px 32px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 -8px 60px rgba(124,92,252,0.2);
+  position:relative; z-index:2;
+}
+
+/* Tabs */
+.auth-tabs {
+  display:flex; position:relative;
+  background:rgba(255,255,255,0.06); border-radius:14px;
+  padding:4px; margin-bottom:24px; gap:0;
+}
+.auth-tab {
+  flex:1; padding:10px; border:none; background:transparent;
+  font-family:'Nunito',sans-serif; font-size:14px; font-weight:800;
+  color:rgba(255,255,255,0.45); cursor:pointer; border-radius:10px;
+  transition:color 0.2s; position:relative; z-index:1;
+}
+.auth-tab.active { color:#fff; }
+.auth-tab-slider {
+  position:absolute; top:4px; left:4px; bottom:4px;
+  width:calc(50% - 4px);
+  background:linear-gradient(135deg,#7c5cfc,#f472b6);
+  border-radius:10px;
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 4px 16px rgba(124,92,252,0.4);
+}
+.auth-tab-slider.right { transform:translateX(100%); }
+
+/* Inputs */
+.auth-form { display:flex; flex-direction:column; gap:12px; }
+.auth-input-wrap {
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.1);
+  border-radius:14px; padding:0 14px;
+  transition:border-color 0.2s, background 0.2s;
+}
+.auth-input-wrap:focus-within {
+  border-color:rgba(124,92,252,0.7);
+  background:rgba(124,92,252,0.08);
+}
+.auth-input-icon { font-size:16px; flex-shrink:0; }
+.auth-input {
+  flex:1; padding:14px 0; background:transparent; border:none; outline:none;
+  color:#fff; font-family:'Nunito',sans-serif; font-size:15px; font-weight:700;
+}
+.auth-input::placeholder { color:rgba(255,255,255,0.3); font-weight:600; }
+
+/* Error */
+.auth-error {
+  font-size:12px; font-weight:700; color:#f87171;
+  text-align:center; min-height:16px; padding:0 4px;
+}
+
+/* Main button */
+.auth-btn-main {
+  width:100%; padding:16px; border:none; border-radius:16px;
+  font-family:'Fredoka One',cursive; font-size:20px;
+  background:linear-gradient(135deg,#7c5cfc,#f472b6);
+  color:#fff; cursor:pointer;
+  box-shadow:0 6px 24px rgba(124,92,252,0.45);
+  transition:transform 0.15s, box-shadow 0.15s;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  margin-top:4px;
+}
+.auth-btn-main:active { transform:scale(0.97); box-shadow:0 2px 12px rgba(124,92,252,0.3); }
+.auth-btn-arrow { font-size:22px; }
+
+/* Divider */
+.auth-divider {
+  display:flex; align-items:center; gap:12px; margin:4px 0;
+}
+.auth-divider::before, .auth-divider::after {
+  content:""; flex:1; height:1px; background:rgba(255,255,255,0.1);
+}
+.auth-divider span { font-size:12px; color:rgba(255,255,255,0.3); font-weight:700; }
+
+/* Google button */
+.auth-btn-google {
+  width:100%; padding:13px; border-radius:14px;
+  border:1.5px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.8);
+  font-family:'Nunito',sans-serif; font-size:14px; font-weight:800;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;
+  transition:all 0.2s;
+}
+.auth-btn-google:active { background:rgba(255,255,255,0.12); }
+
+/* Footer */
+.auth-footer {
+  position:relative; z-index:2;
+  color:rgba(255,255,255,0.2); font-size:11px; font-weight:700;
+  letter-spacing:0.1em; padding:12px 0 max(16px,env(safe-area-inset-bottom,16px));
+  background:rgba(20,14,40,0.96);
+  width:100%; text-align:center; max-width:480px;
+}
+
+/* p-input kept for modals */
+.p-input {
+  width:100%; padding:12px 14px; border:2px solid var(--border);
+  border-radius:12px; background:var(--input-bg); color:var(--text);
+  font-family:'Nunito',sans-serif; font-size:15px; font-weight:700;
+  outline:none; transition:border-color 0.2s; display:block; box-sizing:border-box;
+}
+.p-input:focus { border-color:var(--purple); }
+.p-input::placeholder { color:var(--text-muted); font-weight:600; }
+.logo-wordmark {
+  font-family:'Fredoka One',cursive;
+  background:linear-gradient(135deg,var(--pink),var(--purple),var(--blue));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+
+/* ══════════════════
+   PROFILE VIEW
+══════════════════ */
+.profile-view-card {
+  margin:8px 14px; padding:20px;
+  background:linear-gradient(135deg,var(--purple),var(--pink));
+  border-radius:20px; display:flex; flex-direction:column;
+  align-items:center; gap:6px;
+  box-shadow:0 8px 24px rgba(139,92,246,0.35);
+}
+.profile-view-avatar { font-size:52px; }
+.profile-view-pseudo { font-family:'Fredoka One',cursive; font-size:24px; color:#fff; }
+.profile-view-level  { font-size:13px; color:rgba(255,255,255,0.8); font-weight:700; background:rgba(0,0,0,0.15); padding:3px 12px; border-radius:20px; }
+.profile-view-code   { font-size:12px; color:rgba(255,255,255,0.85); font-weight:700; display:flex; align-items:center; gap:6px; }
+.copy-code-btn {
+  background:rgba(255,255,255,0.2); border:none; border-radius:8px;
+  padding:3px 8px; font-size:14px; cursor:pointer;
+}
+.copy-code-btn:active { background:rgba(255,255,255,0.4); }
+.profile-stats-grid {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:10px 14px;
+}
+.stat-card {
+  background:var(--panel); border:2px solid var(--border); border-radius:14px;
+  padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:2px;
+  box-shadow:0 2px 8px var(--card-shadow);
+}
+.stat-val { font-family:'Fredoka One',cursive; font-size:20px; color:var(--purple); }
+.stat-lbl { font-size:9px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; }
+.section-title {
+  font-family:'Fredoka One',cursive; font-size:16px; color:var(--text);
+  padding:8px 14px 6px; display:flex; align-items:center; gap:8px;
+}
+.online-legend { font-size:11px; color:var(--text-muted); font-family:'Nunito',sans-serif; font-weight:600; }
+.avatar-grid { display:flex; flex-wrap:wrap; gap:8px; padding:0 14px 8px; }
+.avatar-opt {
+  width:42px; height:42px; border-radius:12px; font-size:24px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--panel); border:2px solid var(--border);
+  cursor:pointer; transition:all 0.2s;
+}
+.avatar-opt.selected { border-color:var(--purple); background:var(--purple-light); transform:scale(1.1); }
+.friends-add { display:flex; gap:8px; padding:0 14px 8px; align-items:center; }
+.btn-add-friend {
+  padding:10px 14px; border-radius:12px; border:none;
+  background:linear-gradient(135deg,var(--teal),var(--blue));
+  color:#fff; font-family:'Nunito',sans-serif; font-size:13px; font-weight:800;
+  cursor:pointer; white-space:nowrap;
+}
+.friends-list { display:flex; flex-direction:column; gap:8px; padding:0 14px 16px; }
+.friend-row {
+  display:flex; align-items:center; gap:10px; padding:10px;
+  background:var(--panel); border:2px solid var(--border); border-radius:14px;
+  box-shadow:0 2px 6px var(--card-shadow);
+}
+.friend-avatar { font-size:26px; }
+.friend-info   { flex:1; }
+.friend-pseudo { font-size:14px; font-weight:800; color:var(--text); }
+.friend-level  { font-size:11px; color:var(--text-muted); font-weight:600; }
+.friend-remove {
+  background:none; border:none; font-size:16px; cursor:pointer;
+  color:var(--text-muted); padding:4px; border-radius:8px;
+}
+.friends-empty { text-align:center; color:var(--text-muted); font-size:13px; font-weight:600; padding:16px 0; line-height:1.6; }

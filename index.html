@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TCGPotes</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20rx%3D'20'%20fill%3D'%230f173c'%2F%3E%3Cg%20transform%3D'translate(60%2C55)%20rotate(12)'%3E%3Crect%20x%3D'-20'%20y%3D'-27'%20width%3D'40'%20height%3D'54'%20rx%3D'3'%20fill%3D'%23d4af37'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(45%2C50)%20rotate(-6)'%3E%3Crect%20x%3D'-20'%20y%3D'-27'%20width%3D'40'%20height%3D'54'%20rx%3D'3'%20fill%3D'%23f0f0ff'%2F%3E%3Crect%20x%3D'-16'%20y%3D'-23'%20width%3D'32'%20height%3D'46'%20rx%3D'2'%20fill%3D'%23c8c8e6'%2F%3E%3C%2Fg%3E%3Ctext%20x%3D'50'%20y%3D'68'%20font-family%3D'Arial%20Black%2CArial'%20font-weight%3D'900'%20font-size%3D'52'%20fill%3D'%237c5cfc'%20text-anchor%3D'middle'%3ET%3C%2Ftext%3E%3C%2Fsvg%3E' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20rx%3D'20'%20fill%3D'%230f173c'%2F%3E%3Cg%20transform%3D'translate(60%2C55)%20rotate(12)'%3E%3Crect%20x%3D'-20'%20y%3D'-27'%20width%3D'40'%20height%3D'54'%20rx%3D'3'%20fill%3D'%23d4af37'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(45%2C50)%20rotate(-6)'%3E%3Crect%20x%3D'-20'%20y%3D'-27'%20width%3D'40'%20height%3D'54'%20rx%3D'3'%20fill%3D'%23f0f0ff'%2F%3E%3Crect%20x%3D'-16'%20y%3D'-23'%20width%3D'32'%20height%3D'46'%20rx%3D'2'%20fill%3D'%23c8c8e6'%2F%3E%3C%2Fg%3E%3Ctext%20x%3D'50'%20y%3D'68'%20font-family%3D'Arial%20Black%2CArial'%20font-weight%3D'900'%20font-size%3D'52'%20fill%3D'%237c5cfc'%20text-anchor%3D'middle'%3ET%3C%2Ftext%3E%3C%2Fsvg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -13,37 +13,127 @@
 <body>
 
 <div class="bg-bubbles" id="bgBubbles"></div>
-
-<!-- Musique de fond -->
 <audio id="bgMusic" src="musique/musique.mp3" loop></audio>
 
-<!-- ══ PAGE : PROFIL / CONNEXION ══ -->
-<div class="page active" id="page-profile">
-  <div class="profile-screen" id="profileScreen">
-    <!-- Formulaire création / connexion -->
-    <div class="profile-logo">
-      <span class="logo-icon-big">🃏</span>
-      <span class="logo-wordmark">TCGPotes</span>
+<!-- ══════════════════════════════════════
+     ÉCRAN DE CHARGEMENT
+══════════════════════════════════════ -->
+<div id="loadingScreen" class="loading-screen">
+  <div class="loading-logo">
+    <div class="auth-logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#0f173c"/>
+  <g transform="translate(60,55) rotate(12)">
+    <rect x="-20" y="-27" width="40" height="54" rx="3" fill="#d4af37"/>
+  </g>
+  <g transform="translate(45,50) rotate(-6)">
+    <rect x="-20" y="-27" width="40" height="54" rx="3" fill="#f0f0ff"/>
+    <rect x="-16" y="-23" width="32" height="46" rx="2" fill="#c8c8e6"/>
+  </g>
+  <text x="50" y="68" font-family="Arial Black,Arial" font-weight="900" font-size="52" fill="#7c5cfc" text-anchor="middle">T</text>
+</svg></div>
+    <div class="auth-logo-text">TCGPotes</div>
+  </div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Connexion…</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE : CONNEXION / INSCRIPTION
+══════════════════════════════════════ -->
+<div class="page" id="page-auth">
+  <div class="auth-screen">
+
+    <!-- Fond décoratif -->
+    <div class="auth-bg-deco">
+      <div class="auth-card-float auth-card-1"></div>
+      <div class="auth-card-float auth-card-2"></div>
+      <div class="auth-card-float auth-card-3"></div>
     </div>
-    <div class="profile-card" id="profileForm">
-      <div class="profile-tabs">
-        <button class="ptab active" id="tabLogin" onclick="switchAuthTab('login')">Connexion</button>
-        <button class="ptab" id="tabRegister" onclick="switchAuthTab('register')">Créer un compte</button>
-      </div>
-      <div id="authLogin">
-        <input class="p-input" id="loginPseudo" placeholder="Pseudo" maxlength="20">
-        <button class="btn-profile-action" onclick="loginUser()">🎮 Jouer !</button>
-        <div class="profile-hint">Entrez votre pseudo pour retrouver votre progression.</div>
-      </div>
-      <div id="authRegister" style="display:none">
-        <input class="p-input" id="regPseudo" placeholder="Pseudo (2–20 caractères)" maxlength="20">
-        <button class="btn-profile-action" onclick="registerUser()">✨ Créer mon compte</button>
-      </div>
+
+    <!-- Logo -->
+    <div class="auth-hero">
+      <div class="auth-logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#0f173c"/>
+  <g transform="translate(60,55) rotate(12)">
+    <rect x="-20" y="-27" width="40" height="54" rx="3" fill="#d4af37"/>
+  </g>
+  <g transform="translate(45,50) rotate(-6)">
+    <rect x="-20" y="-27" width="40" height="54" rx="3" fill="#f0f0ff"/>
+    <rect x="-16" y="-23" width="32" height="46" rx="2" fill="#c8c8e6"/>
+  </g>
+  <text x="50" y="68" font-family="Arial Black,Arial" font-weight="900" font-size="52" fill="#7c5cfc" text-anchor="middle">T</text>
+</svg></div>
+      <div class="auth-logo-text">TCGPotes</div>
+      <div class="auth-logo-sub">Collecte · Échange · Affronte</div>
     </div>
+
+    <!-- Card de connexion -->
+    <div class="auth-card" id="authCard">
+
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin"    onclick="switchAuthTab('login')">Connexion</button>
+        <button class="auth-tab"        id="tabRegister" onclick="switchAuthTab('register')">Inscription</button>
+        <div class="auth-tab-slider" id="authTabSlider"></div>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="authLogin" class="auth-form">
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">✉️</span>
+          <input class="auth-input" id="loginEmail" type="email" placeholder="Adresse email" autocomplete="email">
+        </div>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">🔒</span>
+          <input class="auth-input" id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password">
+        </div>
+        <div class="auth-error" id="authError"></div>
+        <button class="auth-btn-main" onclick="loginUser()">
+          <span>Jouer !</span>
+          <span class="auth-btn-arrow">→</span>
+        </button>
+        <div class="auth-divider"><span>ou</span></div>
+        <button class="auth-btn-google" onclick="loginGoogle()">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+          Continuer avec Google
+        </button>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="authRegister" class="auth-form" style="display:none">
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">👤</span>
+          <input class="auth-input" id="regPseudo" type="text" placeholder="Pseudo (2–20 caractères)" maxlength="20">
+        </div>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">✉️</span>
+          <input class="auth-input" id="regEmail" type="email" placeholder="Adresse email" autocomplete="email">
+        </div>
+        <div class="auth-input-wrap">
+          <span class="auth-input-icon">🔒</span>
+          <input class="auth-input" id="regPassword" type="password" placeholder="Mot de passe (6+ caractères)" autocomplete="new-password">
+        </div>
+        <div class="auth-error" id="regError"></div>
+        <button class="auth-btn-main" onclick="registerUser()">
+          <span>Créer mon compte</span>
+          <span class="auth-btn-arrow">✨</span>
+        </button>
+        <div class="auth-divider"><span>ou</span></div>
+        <button class="auth-btn-google" onclick="loginGoogle()">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+          Continuer avec Google
+        </button>
+      </div>
+
+    </div>
+
+    <div class="auth-footer">✦ Tes cartes t'attendent ✦</div>
   </div>
 </div>
 
-<!-- ══ PAGE : ACCUEIL ══ -->
+<!-- ══════════════════════════════════════
+     PAGE : ACCUEIL
+══════════════════════════════════════ -->
 <div class="page" id="page-home">
   <div class="home-top">
     <div class="app-logo" onclick="showPage('profile-view')">
@@ -51,16 +141,16 @@
       <span class="logo-text">TCGPotes</span>
     </div>
     <div class="home-top-right">
-      <div class="user-chip" id="userChip" onclick="showPage('profile-view')">
+      <div class="user-chip" onclick="showPage('profile-view')">
         <span class="user-avatar" id="userAvatar">😀</span>
-        <span class="user-pseudo" id="userPseudoChip">?</span>
+        <span class="user-pseudo" id="userPseudoChip">…</span>
       </div>
-      <button class="icon-btn" onclick="toggleDark()" id="themeBtn" title="Mode sombre">🌙</button>
-      <button class="icon-btn" onclick="toggleMusic()" id="musicBtn" title="Musique">🔇</button>
+      <button class="icon-btn" onclick="toggleDark()"  id="themeBtn">🌙</button>
+      <button class="icon-btn" onclick="toggleMusic()" id="musicBtn">🔇</button>
     </div>
   </div>
 
-  <div class="ext-selector-strip" id="extStrip" onclick="showPage('extensions')">
+  <div class="ext-selector-strip" onclick="showPage('extensions')">
     <span id="extStripIcon">🏫</span>
     <span id="extStripName">Lycée</span>
     <span class="ext-strip-arrow">›</span>
@@ -69,7 +159,7 @@
   <div class="booster-area">
     <div class="booster-wrapper" id="boosterWrapper">
       <div class="booster-shine"></div>
-      <div class="booster-placeholder" id="boosterPlaceholder">
+      <div class="booster-placeholder">
         <div class="booster-deco-ring"></div>
         <div class="booster-symbol">✦</div>
         <div class="booster-ext-name" id="boosterExtName">Lycée</div>
@@ -91,7 +181,9 @@
   </div>
 </div>
 
-<!-- ══ PAGE : COLLECTION ══ -->
+<!-- ══════════════════════════════════════
+     PAGE : COLLECTION
+══════════════════════════════════════ -->
 <div class="page" id="page-collection">
   <div class="page-header-bar">
     <div class="page-header-title">🃏 Collection</div>
@@ -101,7 +193,9 @@
   <div class="collection-grid" id="collectionGrid"></div>
 </div>
 
-<!-- ══ PAGE : EXTENSIONS ══ -->
+<!-- ══════════════════════════════════════
+     PAGE : EXTENSIONS
+══════════════════════════════════════ -->
 <div class="page" id="page-extensions">
   <div class="page-header-bar">
     <div class="page-header-title">🌟 Extensions</div>
@@ -110,7 +204,9 @@
   <div class="ext-list" id="extList"></div>
 </div>
 
-<!-- ══ PAGE : PROFIL JOUEUR ══ -->
+<!-- ══════════════════════════════════════
+     PAGE : PROFIL
+══════════════════════════════════════ -->
 <div class="page" id="page-profile-view">
   <div class="page-header-bar">
     <div class="page-header-title">👤 Mon Profil</div>
@@ -119,11 +215,11 @@
 
   <div class="profile-view-card">
     <div class="profile-view-avatar" id="pvAvatar">😀</div>
-    <div class="profile-view-pseudo" id="pvPseudo">Joueur</div>
-    <div class="profile-view-level" id="pvLevel">Niv. 1 · Apprenti</div>
+    <div class="profile-view-pseudo" id="pvPseudo">…</div>
+    <div class="profile-view-level"  id="pvLevel">Niv. 1 · Apprenti</div>
     <div class="profile-view-code">
       Code ami : <strong id="pvFriendCode">——</strong>
-      <button class="copy-code-btn" onclick="copyFriendCode()">📋</button>
+      <button class="copy-code-btn" onclick="copyFriendCode()" title="Copier">📋</button>
     </div>
   </div>
 
@@ -134,25 +230,27 @@
     <div class="stat-card"><div class="stat-val" id="statFriends">0</div><div class="stat-lbl">Amis</div></div>
   </div>
 
-  <!-- Avatar selector -->
   <div class="section-title">🎭 Avatar</div>
   <div class="avatar-grid" id="avatarGrid"></div>
 
-  <!-- Friends section -->
-  <div class="section-title">👫 Amis</div>
+  <div class="section-title">👫 Amis
+    <span class="online-legend">🟢 = en ligne récemment</span>
+  </div>
   <div class="friends-add">
-    <input class="p-input" id="friendCodeInput" placeholder="Code ami (ex: ABC-1234)" maxlength="8" style="flex:1">
+    <input class="p-input" id="friendCodeInput" placeholder="Code ami (ex: ABC-1234)" maxlength="8" style="flex:1;margin-bottom:0">
     <button class="btn-add-friend" onclick="addFriend()">+ Ajouter</button>
   </div>
+  <div id="friendSearchResult" style="padding:0 14px;margin-bottom:8px"></div>
   <div class="friends-list" id="friendsList"></div>
 
-  <!-- Logout -->
-  <div style="padding:12px 16px 4px">
-    <button class="btn-save btn-save-reset" onclick="confirmLogout()">🚪 Changer de compte</button>
+  <div style="padding:8px 14px 4px">
+    <button class="btn-save btn-save-reset" onclick="confirmLogout()">🚪 Se déconnecter</button>
   </div>
 </div>
 
-<!-- ══ PAGE : PARAMÈTRES ══ -->
+<!-- ══════════════════════════════════════
+     PAGE : RÉGLAGES
+══════════════════════════════════════ -->
 <div class="page" id="page-settings">
   <div class="page-header-bar">
     <div class="page-header-title">⚙️ Réglages</div>
@@ -168,10 +266,7 @@
           <div class="settings-row-sub">Thème nuit</div>
         </div>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="darkToggle" onchange="setDark(this.checked)">
-        <span class="toggle-slider"></span>
-      </label>
+      <label class="toggle"><input type="checkbox" id="darkToggle" onchange="setDark(this.checked)"><span class="toggle-slider"></span></label>
     </div>
     <div class="settings-row">
       <div class="settings-row-left">
@@ -196,7 +291,7 @@
       <div class="settings-row-left">
         <div class="settings-icon">🎵</div>
         <div class="settings-row-info">
-          <div class="settings-row-title">Musique</div>
+          <div class="settings-row-title">Volume musique</div>
           <div class="settings-row-sub" id="volumeLabel">70%</div>
         </div>
       </div>
@@ -210,10 +305,7 @@
           <div class="settings-row-sub">Effets visuels</div>
         </div>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="animToggle" checked onchange="saveSetting('animations', this.checked)">
-        <span class="toggle-slider"></span>
-      </label>
+      <label class="toggle"><input type="checkbox" id="animToggle" checked onchange="saveSetting('animations',this.checked)"><span class="toggle-slider"></span></label>
     </div>
   </div>
 
@@ -224,7 +316,7 @@
         <div class="settings-icon">📤</div>
         <div class="settings-row-info">
           <div class="settings-row-title">Exporter</div>
-          <div class="settings-row-sub">Copier la sauvegarde</div>
+          <div class="settings-row-sub">Copier la sauvegarde locale</div>
         </div>
       </div>
       <button class="mini-btn" onclick="exportSave()">Copier</button>
@@ -234,7 +326,7 @@
         <div class="settings-icon">📥</div>
         <div class="settings-row-info">
           <div class="settings-row-title">Importer</div>
-          <div class="settings-row-sub">Restaurer</div>
+          <div class="settings-row-sub">Restaurer une sauvegarde</div>
         </div>
       </div>
       <button class="mini-btn" onclick="showImportModal()">Coller</button>
@@ -244,19 +336,21 @@
         <div class="settings-icon">🔔</div>
         <div class="settings-row-info">
           <div class="settings-row-title">Alertes recharge</div>
-          <div class="settings-row-sub">Notifications</div>
+          <div class="settings-row-sub">Notifications navigateur</div>
         </div>
       </div>
       <button class="mini-btn" onclick="requestNotifPermission()">Activer</button>
     </div>
     <div style="padding:8px 0">
-      <button class="btn-save btn-save-reset" onclick="confirmReset()">🗑️ Réinitialiser la sauvegarde</button>
+      <button class="btn-save btn-save-reset" onclick="confirmReset()">🗑️ Réinitialiser la progression</button>
     </div>
   </div>
 </div>
 
-<!-- ══ NAVBAR ══ -->
-<nav class="navbar">
+<!-- ══════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════ -->
+<nav class="navbar" id="mainNavbar" style="display:none">
   <div class="nav-item" onclick="showPage('home')" id="nav-home">
     <div class="nav-icon">🏠</div>
     <div class="nav-label" data-i18n="nav_home">Accueil</div>
@@ -275,11 +369,14 @@
   </div>
 </nav>
 
-<!-- ══ OVERLAY BOOSTER ══ -->
+<!-- ══════════════════════════════════════
+     OVERLAY BOOSTER
+══════════════════════════════════════ -->
 <div class="overlay" id="boosterOverlay">
   <div class="particles" id="particles"></div>
+
   <div class="opening-stage" id="stageBooster">
-    <div class="booster-tap-container" id="boosterTapVisual" onclick="startReveal()">
+    <div class="booster-tap-container" onclick="startReveal()">
       <div class="booster-placeholder booster-tap">
         <div class="booster-deco-ring"></div>
         <div class="booster-symbol" style="font-size:60px">✦</div>
@@ -308,12 +405,15 @@
   </div>
 </div>
 
-<!-- ══ MODAL CARTE ══ -->
+<!-- ══════════════════════════════════════
+     MODALES
+══════════════════════════════════════ -->
+<!-- Carte -->
 <div class="card-modal-overlay" id="cardModal" onclick="closeCardModal()">
   <div class="card-modal-inner" onclick="event.stopPropagation()">
-    <div class="card-modal-img" id="cardModalImg"></div>
+    <div class="card-modal-img"   id="cardModalImg"></div>
     <div class="card-modal-info">
-      <div class="card-modal-name" id="cardModalName"></div>
+      <div class="card-modal-name"  id="cardModalName"></div>
       <div class="card-rarity-badge" id="cardModalRarity"></div>
       <div class="card-modal-count" id="cardModalCount"></div>
     </div>
@@ -321,39 +421,50 @@
   </div>
 </div>
 
-<!-- ══ MODAL RESET ══ -->
+<!-- Reset -->
 <div class="card-modal-overlay" id="resetModal">
   <div class="card-modal-inner" onclick="event.stopPropagation()">
-    <div style="font-size:48px;text-align:center">⚠️</div>
+    <div style="font-size:46px;text-align:center">⚠️</div>
     <div class="card-modal-name">Réinitialiser ?</div>
-    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px">Toutes tes cartes et recharges seront supprimées. Cette action est <strong>irréversible</strong> !</p>
+    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px">
+      Toute ta progression (cartes, boosters) sera supprimée.<br><strong>Irréversible !</strong>
+    </p>
     <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doReset()">🗑️ Oui, tout effacer</button>
     <button class="btn-modal-close" onclick="closeModal('resetModal')">✕ Annuler</button>
   </div>
 </div>
 
-<!-- ══ MODAL IMPORT ══ -->
+<!-- Import -->
 <div class="card-modal-overlay" id="importModal">
   <div class="card-modal-inner" onclick="event.stopPropagation()">
     <div class="card-modal-name">📥 Importer</div>
-    <textarea class="save-data-area" id="importDataArea" placeholder="Colle ton code ici..." style="width:100%;min-height:80px;margin:8px 0"></textarea>
+    <textarea class="save-data-area" id="importDataArea" placeholder="Colle ton code ici…" style="width:100%;min-height:80px;margin:8px 0"></textarea>
     <button class="btn-save btn-save-import" style="margin-bottom:8px" onclick="importSave()">✅ Importer</button>
     <button class="btn-modal-close" onclick="closeModal('importModal')">✕ Annuler</button>
   </div>
 </div>
 
-<!-- ══ MODAL LOGOUT ══ -->
+<!-- Logout -->
 <div class="card-modal-overlay" id="logoutModal">
   <div class="card-modal-inner" onclick="event.stopPropagation()">
-    <div style="font-size:48px;text-align:center">🚪</div>
-    <div class="card-modal-name">Changer de compte ?</div>
-    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px">Ta progression est sauvegardée localement.</p>
-    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doLogout()">🚪 Oui, déconnecter</button>
+    <div style="font-size:46px;text-align:center">🚪</div>
+    <div class="card-modal-name">Se déconnecter ?</div>
+    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px">
+      Ta progression est sauvegardée dans le cloud ☁️
+    </p>
+    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doLogout()">🚪 Déconnecter</button>
     <button class="btn-modal-close" onclick="closeModal('logoutModal')">✕ Annuler</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     FIREBASE SDK  (version modulaire CDN)
+══════════════════════════════════════ -->
+<!-- Firebase SDK compat (fonctionne sans serveur) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
