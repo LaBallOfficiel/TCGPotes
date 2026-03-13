@@ -1,128 +1,278 @@
 /* ═══════════════════════════════════════════════════════════
-   TCGPOTES — app.js  v5  (Firebase Auth compat + JSONBin)
-   Fonctionne en file:// ET en serveur local
+   TCGPOTES — app.js  v6
+   Firebase Auth + JSONBin · Échanges · Profils amis · i18n complet
 ═══════════════════════════════════════════════════════════ */
 
-// ══════════════════════════════════════════════════════════
-//  CONFIG
-// ══════════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyALLbAdXoT3-Vbcy82n1W__yIjdRpsCwZQ",
-  authDomain:        "tcgpotes-525e0.firebaseapp.com",
-  projectId:         "tcgpotes-525e0",
-  storageBucket:     "tcgpotes-525e0.firebasestorage.app",
-  messagingSenderId: "259521841130",
-  appId:             "1:259521841130:web:ec723c4ca9f1d1987cd493"
+  apiKey:"AIzaSyALLbAdXoT3-Vbcy82n1W__yIjdRpsCwZQ",
+  authDomain:"tcgpotes-525e0.firebaseapp.com",
+  projectId:"tcgpotes-525e0",
+  storageBucket:"tcgpotes-525e0.firebasestorage.app",
+  messagingSenderId:"259521841130",
+  appId:"1:259521841130:web:ec723c4ca9f1d1987cd493"
 };
 const JSONBIN_KEY = "$2a$10$BBj6PdhZCQE70vbGQir6Negcqd6LOBfm0RP3Y7qgdBOxwN7pzs1aO";
-const JB_BASE    = "https://api.jsonbin.io/v3";
+const JB_BASE = "https://api.jsonbin.io/v3";
 
-// ── Init Firebase (API compat, pas d'import) ──────────────
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 
 // ══════════════════════════════════════════════════════════
-//  JSONBIN HELPERS
+//  JSONBIN
 // ══════════════════════════════════════════════════════════
-async function jbCreate(data) {
-  const r = await fetch(`${JB_BASE}/b`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json","X-Master-Key":JSONBIN_KEY,"X-Bin-Private":"true"},
-    body:JSON.stringify(data)
-  });
-  const j = await r.json(); return j.metadata?.id||null;
-}
-async function jbRead(binId) {
-  const r = await fetch(`${JB_BASE}/b/${binId}/latest`, {headers:{"X-Master-Key":JSONBIN_KEY}});
-  const j = await r.json(); return j.record||null;
-}
-async function jbUpdate(binId, data) {
-  await fetch(`${JB_BASE}/b/${binId}`, {
-    method:"PUT",
-    headers:{"Content-Type":"application/json","X-Master-Key":JSONBIN_KEY},
-    body:JSON.stringify(data)
-  });
-}
+async function jbCreate(data){const r=await fetch(`${JB_BASE}/b`,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":JSONBIN_KEY,"X-Bin-Private":"true"},body:JSON.stringify(data)});const j=await r.json();return j.metadata?.id||null;}
+async function jbRead(binId){const r=await fetch(`${JB_BASE}/b/${binId}/latest`,{headers:{"X-Master-Key":JSONBIN_KEY}});const j=await r.json();return j.record||null;}
+async function jbUpdate(binId,data){await fetch(`${JB_BASE}/b/${binId}`,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":JSONBIN_KEY},body:JSON.stringify(data)});}
 
-const LS_INDEX = 'tcgp_index_bin';
-async function getIndexBin() {
-  let id = localStorage.getItem(LS_INDEX);
-  if (!id) { id = await jbCreate({codes:{}}); localStorage.setItem(LS_INDEX,id); }
-  return id;
-}
-async function lookupCode(code) {
-  try { const idx=await jbRead(await getIndexBin()); return idx?.codes?.[code]||null; } catch(e){return null;}
-}
-async function registerCode(code, uid, binId, pseudo, avatar) {
-  try {
-    const idxId=await getIndexBin(); const idx=await jbRead(idxId)||{codes:{}};
-    if(!idx.codes) idx.codes={};
-    idx.codes[code]={uid,binId,pseudo,avatar}; await jbUpdate(idxId,idx);
-  } catch(e){}
-}
-async function updateAvatarIndex(code, avatar) {
-  try {
-    const idxId=await getIndexBin(); const idx=await jbRead(idxId)||{codes:{}};
-    if(idx.codes?.[code]){idx.codes[code].avatar=avatar; await jbUpdate(idxId,idx);}
-  } catch(e){}
-}
+const LS_INDEX='tcgp_index_bin';
+async function getIndexBin(){let id=localStorage.getItem(LS_INDEX);if(!id){id=await jbCreate({codes:{}});localStorage.setItem(LS_INDEX,id);}return id;}
+async function lookupCode(code){try{const idx=await jbRead(await getIndexBin());return idx?.codes?.[code]||null;}catch(e){return null;}}
+async function registerCode(code,uid,binId,pseudo,avatar){try{const idxId=await getIndexBin();const idx=await jbRead(idxId)||{codes:{}};if(!idx.codes)idx.codes={};idx.codes[code]={uid,binId,pseudo,avatar};await jbUpdate(idxId,idx);}catch(e){}}
+async function updateAvatarIndex(code,avatar){try{const idxId=await getIndexBin();const idx=await jbRead(idxId)||{codes:{}};if(idx.codes?.[code]){idx.codes[code].avatar=avatar;await jbUpdate(idxId,idx);}}catch(e){}}
 
 // ══════════════════════════════════════════════════════════
 //  DONNÉES JEU
 // ══════════════════════════════════════════════════════════
-const EXTENSIONS = [{id:'Lycee',name:'Lycée',icon:'🏫',desc:'26 cartes · Extension 1',total:26}];
+const EXTENSIONS=[{id:'Lycee',name:'Lycée',icon:'🏫',desc:'26 cartes · Extension 1',total:26}];
 EXTENSIONS.forEach(e=>{e.cards=buildCards(e.id,e.total);});
-
-function buildCards(ext,total){
-  const out=[];
-  for(let i=1;i<=total;i++){
-    let rarity,emoji;
-    if(i<=10){rarity='basique';emoji='🎴';}
-    else if(i<=20){rarity='rare';emoji='💎';}
-    else if(i<=25){rarity='fullart';emoji='🌟';}
-    else{rarity='gold';emoji='👑';}
-    out.push({id:`${ext}_${i}`,num:i,name:`Carte ${i}`,ext,rarity,emoji,img:`img/${ext}/carte${i}_ex${ext}.png`});
-  }
-  return out;
-}
+function buildCards(ext,total){const out=[];for(let i=1;i<=total;i++){let rarity,emoji;if(i<=10){rarity='basique';emoji='🎴';}else if(i<=20){rarity='rare';emoji='💎';}else if(i<=25){rarity='fullart';emoji='🌟';}else{rarity='gold';emoji='👑';}out.push({id:`${ext}_${i}`,num:i,name:`Carte ${i}`,ext,rarity,emoji,img:`img/${ext}/carte${i}_ex${ext}.png`});}return out;}
 
 const RARITY_LABELS={basique:'Basique',rare:'Rare',fullart:'Full Art',gold:'Gold'};
+const RARITY_ORDER={basique:0,rare:1,fullart:2,gold:3};
 const AVATARS=['😀','😎','🦊','🐱','🐸','🦄','🐲','🤖','👾','🧙','🧜','🦸','🎩','🌈','🍀','⭐'];
-const MAX_CHARGES=4, CHARGE_INTERVAL=6*60*60*1000, CARDS_PER_PACK=5;
+const MAX_CHARGES=2, CHARGE_INTERVAL=6*60*60*1000, CARDS_PER_PACK=3;
 
+// ══════════════════════════════════════════════════════════
+//  I18N COMPLET
+// ══════════════════════════════════════════════════════════
 const I18N={
-  fr:{nav_home:'Accueil',nav_collection:'Collection',nav_profile:'Profil',nav_settings:'Réglages',
-      tap_open:'👆 Appuie pour ouvrir !',open_btn:'🎁 Ouvrir le Booster !',
-      charges_full:'⚡ Recharges complètes !',next_charge:'Prochaine dans',lang_name:'Français'},
-  en:{nav_home:'Home',nav_collection:'Collection',nav_profile:'Profile',nav_settings:'Settings',
-      tap_open:'👆 Tap to open!',open_btn:'🎁 Open Booster!',
-      charges_full:'⚡ Full charges!',next_charge:'Next in',lang_name:'English'},
-  es:{nav_home:'Inicio',nav_collection:'Colección',nav_profile:'Perfil',nav_settings:'Ajustes',
-      tap_open:'👆 ¡Toca para abrir!',open_btn:'🎁 ¡Abrir Sobre!',
-      charges_full:'⚡ ¡Recargas llenas!',next_charge:'Próxima en',lang_name:'Español'},
-  de:{nav_home:'Start',nav_collection:'Sammlung',nav_profile:'Profil',nav_settings:'Einstellungen',
-      tap_open:'👆 Tippe zum Öffnen!',open_btn:'🎁 Booster öffnen!',
-      charges_full:'⚡ Aufladungen voll!',next_charge:'Nächste in',lang_name:'Deutsch'}
+  fr:{
+    // Nav
+    nav_home:'Accueil',nav_collection:'Collection',nav_profile:'Profil',nav_settings:'Réglages',nav_guide:'Guide',
+    // Booster
+    tap_open:'👆 Appuie pour ouvrir !',open_btn:'🎁 Ouvrir le Booster !',
+    charges_full:'⚡ Recharges complètes !',next_charge:'Prochaine dans',
+    card_lbl:'Carte',of_lbl:'/',next_card:'Suivant ➡️',see_recap:'🎉 Voir le récap !',
+    cards_added:'🎉 3 cartes ajoutées !',add_all:'✅ Tout ajouter !',
+    recap_title:'🎉 Ton Booster !',
+    // Collection
+    collection_title:'🃏 Collection',
+    // Profile
+    profile_title:'👤 Mon Profil',friend_code:'Code ami',copy_code:'📋',
+    friends_title:'👫 Amis',no_friends:'Aucun ami pour l\'instant 😢\nPartage ton code ami !',
+    friend_placeholder:'Code ami (ex: ABC-1234)',add_friend:'+ Ajouter',
+    searching:'🔍 Recherche…',not_found:'❌ Code introuvable',already_friend:'👫 Déjà ami !',
+    own_code:'😅 C\'est ton propre code !',friend_added:'👫 {name} ajouté !',
+    friend_removed:'❌ Ami retiré',remove_friend:'✕',
+    view_profile:'👁 Profil',propose_trade:'🔄 Échange',
+    avatar_title:'🎭 Avatar',logout_btn:'🚪 Se déconnecter',
+    stat_cards:'Cartes',stat_uniq:'Uniques',stat_packs:'Boosters',stat_friends:'Amis',
+    // Settings
+    settings_title:'⚙️ Réglages',
+    section_appearance:'🎨 Apparence',dark_mode:'Mode sombre',dark_sub:'Thème nuit',
+    section_lang:'🌍 Langue',
+    section_audio:'🔊 Audio',music_volume:'Volume musique',animations:'Animations',anims_sub:'Effets visuels',
+    section_account:'👤 Compte',notif_title:'Alertes recharge',notif_sub:'Notifications navigateur',enable:'Activer',
+    reset_btn:'🗑️ Réinitialiser la progression',
+    // Modals
+    logout_confirm:'Se déconnecter ?',logout_cloud:'Ta progression est sauvegardée dans le cloud ☁️',
+    logout_do:'🚪 Déconnecter',cancel:'✕ Annuler',close:'✕ Fermer',
+    reset_confirm:'Réinitialiser ?',reset_warn:'Toute ta progression (cartes, boosters) sera supprimée.',irreversible:'Irréversible !',
+    reset_do:'🗑️ Oui, tout effacer',
+    // Échange
+    trade_title:'🔄 Proposer un échange',trade_give:'Ta carte (à donner)',trade_receive:'Carte souhaitée',
+    trade_same_rarity:'⚠️ Même rareté uniquement',trade_send:'Envoyer la proposition',
+    trade_cancel:'Annuler',trade_sent:'📨 Proposition envoyée !',trade_accept:'✅ Accepter',trade_decline:'❌ Refuser',
+    trade_pending:'Échanges en attente',trade_no_pending:'Aucun échange en attente',
+    trade_select_give:'Choisis une carte à donner',trade_select_want:'Choisis une carte à recevoir',
+    trade_accepted:'✅ Échange accepté !',trade_declined:'❌ Échange refusé',
+    // Friend profile
+    friend_profile_title:'Profil de',friend_collection:'Collection',
+    // Guide
+    guide_title:'📖 Guide & Règles',
+    guide_intro:'Bienvenue dans TCGPotes ! Voici tout ce que tu dois savoir.',
+    guide_pack_title:'🎁 Boosters',
+    guide_pack_text:'Chaque joueur dispose de 2 recharges maximum. Une nouvelle recharge arrive toutes les 6 heures. Chaque booster contient 3 cartes tirées aléatoirement.',
+    guide_rarity_title:'✨ Raretés',
+    guide_drop_title:'📊 Taux de drop',
+    guide_rarity_basique:'Basique — Cartes 1 à 10',
+    guide_rarity_rare:'Rare — Cartes 11 à 20',
+    guide_rarity_fullart:'Full Art — Cartes 21 à 25',
+    guide_rarity_gold:'Gold — Carte 26',
+    guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
+    guide_trade_title:'🔄 Échanges',
+    guide_trade_text:'Tu peux proposer un échange à un ami. L\'échange doit être entre deux cartes de même rareté. L\'ami doit accepter pour que l\'échange soit effectif.',
+    guide_level_title:'🏆 Niveaux',
+    guide_level_text:'Ton niveau augmente avec le nombre de cartes collectées.',
+    guide_levels:'Apprenti (0) → Débutant (5) → Collectionneur (20) → Chasseur (50) → Expert (100) → Maître (200)',
+    guide_friend_title:'👫 Amis',
+    guide_friend_text:'Partage ton code ami à tes amis pour les ajouter. Tu peux voir leur collection, leur niveau et proposer des échanges.',
+    lang_name:'Français'
+  },
+  en:{
+    nav_home:'Home',nav_collection:'Collection',nav_profile:'Profile',nav_settings:'Settings',nav_guide:'Guide',
+    tap_open:'👆 Tap to open!',open_btn:'🎁 Open Booster!',
+    charges_full:'⚡ Full charges!',next_charge:'Next in',
+    card_lbl:'Card',of_lbl:'/',next_card:'Next ➡️',see_recap:'🎉 See recap!',
+    cards_added:'🎉 3 cards added!',add_all:'✅ Add all!',recap_title:'🎉 Your Booster!',
+    collection_title:'🃏 Collection',
+    profile_title:'👤 My Profile',friend_code:'Friend code',copy_code:'📋',
+    friends_title:'👫 Friends',no_friends:'No friends yet 😢\nShare your friend code!',
+    friend_placeholder:'Friend code (e.g. ABC-1234)',add_friend:'+ Add',
+    searching:'🔍 Searching…',not_found:'❌ Code not found',already_friend:'👫 Already friends!',
+    own_code:'😅 That\'s your own code!',friend_added:'👫 {name} added!',
+    friend_removed:'❌ Friend removed',remove_friend:'✕',
+    view_profile:'👁 Profile',propose_trade:'🔄 Trade',
+    avatar_title:'🎭 Avatar',logout_btn:'🚪 Log out',
+    stat_cards:'Cards',stat_uniq:'Unique',stat_packs:'Packs',stat_friends:'Friends',
+    settings_title:'⚙️ Settings',
+    section_appearance:'🎨 Appearance',dark_mode:'Dark mode',dark_sub:'Night theme',
+    section_lang:'🌍 Language',
+    section_audio:'🔊 Audio',music_volume:'Music volume',animations:'Animations',anims_sub:'Visual effects',
+    section_account:'👤 Account',notif_title:'Recharge alerts',notif_sub:'Browser notifications',enable:'Enable',
+    reset_btn:'🗑️ Reset progress',
+    logout_confirm:'Log out?',logout_cloud:'Your progress is saved in the cloud ☁️',
+    logout_do:'🚪 Log out',cancel:'✕ Cancel',close:'✕ Close',
+    reset_confirm:'Reset?',reset_warn:'All your progress (cards, packs) will be deleted.',irreversible:'Irreversible!',
+    reset_do:'🗑️ Yes, delete everything',
+    trade_title:'🔄 Propose a trade',trade_give:'Your card (to give)',trade_receive:'Wanted card',
+    trade_same_rarity:'⚠️ Same rarity only',trade_send:'Send proposal',
+    trade_cancel:'Cancel',trade_sent:'📨 Proposal sent!',trade_accept:'✅ Accept',trade_decline:'❌ Decline',
+    trade_pending:'Pending trades',trade_no_pending:'No pending trades',
+    trade_select_give:'Choose a card to give',trade_select_want:'Choose a card to receive',
+    trade_accepted:'✅ Trade accepted!',trade_declined:'❌ Trade declined',
+    friend_profile_title:'Profile of',friend_collection:'Collection',
+    guide_title:'📖 Guide & Rules',
+    guide_intro:'Welcome to TCGPotes! Here\'s everything you need to know.',
+    guide_pack_title:'🎁 Boosters',
+    guide_pack_text:'Each player has 2 charges max. A new charge arrives every 6 hours. Each booster contains 3 randomly drawn cards.',
+    guide_rarity_title:'✨ Rarities',guide_drop_title:'📊 Drop rates',
+    guide_rarity_basique:'Common — Cards 1 to 10',guide_rarity_rare:'Rare — Cards 11 to 20',
+    guide_rarity_fullart:'Full Art — Cards 21 to 25',guide_rarity_gold:'Gold — Card 26',
+    guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
+    guide_trade_title:'🔄 Trades',
+    guide_trade_text:'You can propose a trade to a friend. The trade must be between two cards of the same rarity. Your friend must accept for the trade to go through.',
+    guide_level_title:'🏆 Levels',
+    guide_level_text:'Your level increases with the number of cards collected.',
+    guide_levels:'Apprentice (0) → Beginner (5) → Collector (20) → Hunter (50) → Expert (100) → Master (200)',
+    guide_friend_title:'👫 Friends',
+    guide_friend_text:'Share your friend code to add friends. You can view their collection, their level, and propose trades.',
+    lang_name:'English'
+  },
+  es:{
+    nav_home:'Inicio',nav_collection:'Colección',nav_profile:'Perfil',nav_settings:'Ajustes',nav_guide:'Guía',
+    tap_open:'👆 ¡Toca para abrir!',open_btn:'🎁 ¡Abrir Sobre!',
+    charges_full:'⚡ ¡Recargas llenas!',next_charge:'Próxima en',
+    card_lbl:'Carta',of_lbl:'/',next_card:'Siguiente ➡️',see_recap:'🎉 ¡Ver resumen!',
+    cards_added:'🎉 ¡3 cartas añadidas!',add_all:'✅ ¡Añadir todo!',recap_title:'🎉 ¡Tu Sobre!',
+    collection_title:'🃏 Colección',profile_title:'👤 Mi Perfil',friend_code:'Código amigo',copy_code:'📋',
+    friends_title:'👫 Amigos',no_friends:'Sin amigos 😢\n¡Comparte tu código!',
+    friend_placeholder:'Código amigo',add_friend:'+ Añadir',searching:'🔍 Buscando…',not_found:'❌ Código no encontrado',
+    already_friend:'👫 ¡Ya es amigo!',own_code:'😅 ¡Es tu propio código!',friend_added:'👫 {name} añadido!',
+    friend_removed:'❌ Amigo eliminado',remove_friend:'✕',view_profile:'👁 Perfil',propose_trade:'🔄 Intercambio',
+    avatar_title:'🎭 Avatar',logout_btn:'🚪 Cerrar sesión',
+    stat_cards:'Cartas',stat_uniq:'Únicas',stat_packs:'Sobres',stat_friends:'Amigos',
+    settings_title:'⚙️ Ajustes',section_appearance:'🎨 Apariencia',dark_mode:'Modo oscuro',dark_sub:'Tema noche',
+    section_lang:'🌍 Idioma',section_audio:'🔊 Audio',music_volume:'Volumen música',animations:'Animaciones',anims_sub:'Efectos visuales',
+    section_account:'👤 Cuenta',notif_title:'Alertas recarga',notif_sub:'Notificaciones',enable:'Activar',
+    reset_btn:'🗑️ Reiniciar progreso',
+    logout_confirm:'¿Cerrar sesión?',logout_cloud:'Tu progreso está guardado en la nube ☁️',
+    logout_do:'🚪 Cerrar sesión',cancel:'✕ Cancelar',close:'✕ Cerrar',
+    reset_confirm:'¿Reiniciar?',reset_warn:'Todo tu progreso (cartas, sobres) será eliminado.',irreversible:'¡Irreversible!',
+    reset_do:'🗑️ Sí, borrar todo',
+    trade_title:'🔄 Proponer intercambio',trade_give:'Tu carta (a dar)',trade_receive:'Carta deseada',
+    trade_same_rarity:'⚠️ Solo misma rareza',trade_send:'Enviar propuesta',
+    trade_cancel:'Cancelar',trade_sent:'📨 ¡Propuesta enviada!',trade_accept:'✅ Aceptar',trade_decline:'❌ Rechazar',
+    trade_pending:'Intercambios pendientes',trade_no_pending:'Sin intercambios pendientes',
+    trade_select_give:'Elige carta a dar',trade_select_want:'Elige carta a recibir',
+    trade_accepted:'✅ ¡Intercambio aceptado!',trade_declined:'❌ Intercambio rechazado',
+    friend_profile_title:'Perfil de',friend_collection:'Colección',
+    guide_title:'📖 Guía y Reglas',guide_intro:'¡Bienvenido a TCGPotes!',
+    guide_pack_title:'🎁 Sobres',guide_pack_text:'Cada jugador tiene 2 recargas máx. Una nueva recarga llega cada 6 horas. Cada sobre contiene 3 cartas.',
+    guide_rarity_title:'✨ Rarezas',guide_drop_title:'📊 Tasas de drop',
+    guide_rarity_basique:'Común — Cartas 1 a 10',guide_rarity_rare:'Rara — Cartas 11 a 20',
+    guide_rarity_fullart:'Full Art — Cartas 21 a 25',guide_rarity_gold:'Gold — Carta 26',
+    guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
+    guide_trade_title:'🔄 Intercambios',guide_trade_text:'Puedes proponer un intercambio a un amigo. Debe ser entre cartas de la misma rareza.',
+    guide_level_title:'🏆 Niveles',guide_level_text:'Tu nivel sube con el número de cartas coleccionadas.',
+    guide_levels:'Aprendiz (0) → Principiante (5) → Coleccionista (20) → Cazador (50) → Experto (100) → Maestro (200)',
+    guide_friend_title:'👫 Amigos',guide_friend_text:'Comparte tu código para añadir amigos. Puedes ver su colección y proponer intercambios.',
+    lang_name:'Español'
+  },
+  de:{
+    nav_home:'Start',nav_collection:'Sammlung',nav_profile:'Profil',nav_settings:'Einstellungen',nav_guide:'Anleitung',
+    tap_open:'👆 Tippe zum Öffnen!',open_btn:'🎁 Booster öffnen!',
+    charges_full:'⚡ Aufladungen voll!',next_charge:'Nächste in',
+    card_lbl:'Karte',of_lbl:'/',next_card:'Weiter ➡️',see_recap:'🎉 Zusammenfassung!',
+    cards_added:'🎉 3 Karten hinzugefügt!',add_all:'✅ Alle hinzufügen!',recap_title:'🎉 Dein Booster!',
+    collection_title:'🃏 Sammlung',profile_title:'👤 Mein Profil',friend_code:'Freundescode',copy_code:'📋',
+    friends_title:'👫 Freunde',no_friends:'Noch keine Freunde 😢',
+    friend_placeholder:'Freundescode (z.B. ABC-1234)',add_friend:'+ Hinzufügen',searching:'🔍 Suche…',not_found:'❌ Code nicht gefunden',
+    already_friend:'👫 Bereits befreundet!',own_code:'😅 Das ist dein eigener Code!',friend_added:'👫 {name} hinzugefügt!',
+    friend_removed:'❌ Freund entfernt',remove_friend:'✕',view_profile:'👁 Profil',propose_trade:'🔄 Tausch',
+    avatar_title:'🎭 Avatar',logout_btn:'🚪 Abmelden',
+    stat_cards:'Karten',stat_uniq:'Einzigartig',stat_packs:'Booster',stat_friends:'Freunde',
+    settings_title:'⚙️ Einstellungen',section_appearance:'🎨 Aussehen',dark_mode:'Dunkler Modus',dark_sub:'Nacht-Thema',
+    section_lang:'🌍 Sprache',section_audio:'🔊 Audio',music_volume:'Musiklautstärke',animations:'Animationen',anims_sub:'Visuelle Effekte',
+    section_account:'👤 Konto',notif_title:'Auflade-Benachrichtigungen',notif_sub:'Browser-Benachrichtigungen',enable:'Aktivieren',
+    reset_btn:'🗑️ Fortschritt zurücksetzen',
+    logout_confirm:'Abmelden?',logout_cloud:'Dein Fortschritt ist in der Cloud gespeichert ☁️',
+    logout_do:'🚪 Abmelden',cancel:'✕ Abbrechen',close:'✕ Schließen',
+    reset_confirm:'Zurücksetzen?',reset_warn:'Dein gesamter Fortschritt wird gelöscht.',irreversible:'Unwiderruflich!',
+    reset_do:'🗑️ Ja, alles löschen',
+    trade_title:'🔄 Tausch vorschlagen',trade_give:'Deine Karte (abgeben)',trade_receive:'Gewünschte Karte',
+    trade_same_rarity:'⚠️ Nur gleiche Seltenheit',trade_send:'Vorschlag senden',
+    trade_cancel:'Abbrechen',trade_sent:'📨 Vorschlag gesendet!',trade_accept:'✅ Annehmen',trade_decline:'❌ Ablehnen',
+    trade_pending:'Ausstehende Tausche',trade_no_pending:'Keine ausstehenden Tausche',
+    trade_select_give:'Karte zum Abgeben wählen',trade_select_want:'Gewünschte Karte wählen',
+    trade_accepted:'✅ Tausch angenommen!',trade_declined:'❌ Tausch abgelehnt',
+    friend_profile_title:'Profil von',friend_collection:'Sammlung',
+    guide_title:'📖 Anleitung & Regeln',guide_intro:'Willkommen bei TCGPotes!',
+    guide_pack_title:'🎁 Booster',guide_pack_text:'Jeder Spieler hat max. 2 Aufladungen. Alle 6 Stunden kommt eine neue. Jeder Booster enthält 3 Karten.',
+    guide_rarity_title:'✨ Seltenheiten',guide_drop_title:'📊 Drop-Raten',
+    guide_rarity_basique:'Gewöhnlich — Karten 1–10',guide_rarity_rare:'Selten — Karten 11–20',
+    guide_rarity_fullart:'Full Art — Karten 21–25',guide_rarity_gold:'Gold — Karte 26',
+    guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
+    guide_trade_title:'🔄 Tausche',guide_trade_text:'Du kannst einem Freund einen Tausch vorschlagen. Nur gleiche Seltenheiten.',
+    guide_level_title:'🏆 Level',guide_level_text:'Dein Level steigt mit der Anzahl gesammelter Karten.',
+    guide_levels:'Lehrling (0) → Anfänger (5) → Sammler (20) → Jäger (50) → Experte (100) → Meister (200)',
+    guide_friend_title:'👫 Freunde',guide_friend_text:'Teile deinen Freundescode. Du kannst ihre Sammlung sehen und Tausche vorschlagen.',
+    lang_name:'Deutsch'
+  }
 };
-function t(k){return(I18N[appCfg.lang]||I18N.fr)[k]||k;}
+function t(k,vars){
+  let s=(I18N[appCfg.lang]||I18N.fr)[k]||k;
+  if(vars)Object.entries(vars).forEach(([k,v])=>{s=s.replace('{'+k+'}',v);});
+  return s;
+}
 function applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(el=>{const v=t(el.dataset.i18n);if(v!==el.dataset.i18n)el.textContent=v;});
-  const b=document.getElementById('btnOpen');if(b)b.textContent=t('open_btn');
-  const h=document.querySelector('.tap-hint');if(h)h.textContent=t('tap_open');
-  const s=document.getElementById('langSubLabel');if(s)s.textContent=t('lang_name');
+  // data-i18n attributes
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.dataset.i18n, v=t(k);
+    if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){el.placeholder=v;}
+    else{el.textContent=v;}
+  });
+  // data-i18n-placeholder
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{el.placeholder=t(el.dataset.i18nPh);});
+  // Specific dynamic elements
+  const btnOpen=document.getElementById('btnOpen');if(btnOpen)btnOpen.textContent=t('open_btn');
+  const tapHint=document.querySelector('.tap-hint');if(tapHint)tapHint.textContent=t('tap_open');
+  const langSub=document.getElementById('langSubLabel');if(langSub)langSub.textContent=t('lang_name');
+  const langSel=document.getElementById('langSelect');if(langSel)langSel.value=appCfg.lang;
+  updateTimer();
+  if(currentPage==='guide')renderGuide();
 }
 
 // ══════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════
 let appCfg={lang:'fr',dark:false,volume:70,animations:true};
-let currentUser=null, profile=null, gameState=null;
-let pendingCards=[], revealIndex=0, toastTimeout=null, musicPlaying=false;
+let currentUser=null,profile=null,gameState=null,currentPage='home';
+let pendingCards=[],revealIndex=0,toastTimeout=null,musicPlaying=false;
+let tradeData={giving:null,wanting:null,friendUid:null,friendBinId:null};
 
-const LS_CFG='tcgp_cfg';
-const LS_PROFILE='tcgp_profile';
-const lsGame=uid=>`tcgp_game_${uid}`;
-const lsBin =uid=>`tcgp_bin_${uid}`;
+const LS_CFG='tcgp_cfg',LS_PROFILE='tcgp_profile';
+const lsGame=uid=>`tcgp_game_${uid}`,lsBin=uid=>`tcgp_bin_${uid}`;
 
 function saveCfg(){try{localStorage.setItem(LS_CFG,JSON.stringify(appCfg));}catch(e){}}
 function loadCfg(){try{const s=localStorage.getItem(LS_CFG);if(s)appCfg={...appCfg,...JSON.parse(s)};}catch(e){}}
@@ -130,55 +280,31 @@ function saveGame(){if(!gameState||!currentUser)return;try{localStorage.setItem(
 function loadGameLS(){try{const s=localStorage.getItem(lsGame(currentUser?.uid));return s?JSON.parse(s):null;}catch(e){return null;}}
 function saveProfileLS(){try{localStorage.setItem(LS_PROFILE,JSON.stringify(profile));}catch(e){}}
 function loadProfileLS(){try{const s=localStorage.getItem(LS_PROFILE);return s?JSON.parse(s):null;}catch(e){return null;}}
-function defaultGame(){return{charges:4,lastChargeTime:Date.now(),currentExt:'Lycee',collection:{}};}
+function defaultGame(){return{charges:MAX_CHARGES,lastChargeTime:Date.now(),currentExt:'Lycee',collection:{},pendingTrades:[]};}
 
-function genFriendCode(uid){
-  const L='ABCDEFGHJKLMNPQRSTUVWXYZ';
-  let h=0;for(const c of uid)h=(h*31+c.charCodeAt(0))&0x7fffffff;
-  let code='',tmp=h;
-  for(let i=0;i<3;i++){code+=L[tmp%L.length];tmp=Math.floor(tmp/L.length);}
-  return code+'-'+(1000+(h%9000));
-}
-function getLevel(n){
-  if(n>=200)return{num:10,label:'Maître'};if(n>=100)return{num:7,label:'Expert'};
-  if(n>=50)return{num:5,label:'Chasseur'};if(n>=20)return{num:3,label:'Collectionneur'};
-  if(n>=5)return{num:2,label:'Débutant'};return{num:1,label:'Apprenti'};
-}
+function genFriendCode(uid){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';let h=0;for(const c of uid)h=(h*31+c.charCodeAt(0))&0x7fffffff;let code='',tmp=h;for(let i=0;i<3;i++){code+=L[tmp%L.length];tmp=Math.floor(tmp/L.length);}return code+'-'+(1000+(h%9000));}
+function getLevel(n){if(n>=200)return{num:10,label:'Maître'};if(n>=100)return{num:7,label:'Expert'};if(n>=50)return{num:5,label:'Chasseur'};if(n>=20)return{num:3,label:'Collectionneur'};if(n>=5)return{num:2,label:'Débutant'};return{num:1,label:'Apprenti'};}
+function getExt(id){return EXTENSIONS.find(e=>e.id===id)||EXTENSIONS[0];}
+function currentExt(){return getExt(gameState?.currentExt||'Lycee');}
+function getRarityBg(r){return{basique:'linear-gradient(135deg,#94a3b8,#64748b)',rare:'linear-gradient(135deg,#93c5fd,#3b82f6)',fullart:'linear-gradient(135deg,#c4b5fd,#8b5cf6)',gold:'linear-gradient(135deg,#fde68a,#f59e0b)'}[r]||'linear-gradient(135deg,#e2e8f0,#cbd5e1)';}
 
 // ══════════════════════════════════════════════════════════
 //  PROFIL SYNC
 // ══════════════════════════════════════════════════════════
 let saveRemoteTimer=null;
-function saveProfile(){
-  saveProfileLS(); saveGame();
-  clearTimeout(saveRemoteTimer);
-  saveRemoteTimer=setTimeout(saveProfileRemote,1200);
-}
+function saveProfile(){saveProfileLS();saveGame();clearTimeout(saveRemoteTimer);saveRemoteTimer=setTimeout(saveProfileRemote,1200);}
 async function saveProfileRemote(){
   if(!profile||!currentUser)return;
   const data={...profile,gameState};
   try{
     let binId=localStorage.getItem(lsBin(currentUser.uid))||profile.binId;
     if(binId){await jbUpdate(binId,data);}
-    else{
-      binId=await jbCreate(data); profile.binId=binId;
-      localStorage.setItem(lsBin(currentUser.uid),binId);
-      saveProfileLS();
-      await registerCode(profile.friendCode,currentUser.uid,binId,profile.pseudo,profile.avatar);
-    }
+    else{binId=await jbCreate(data);profile.binId=binId;localStorage.setItem(lsBin(currentUser.uid),binId);saveProfileLS();await registerCode(profile.friendCode,currentUser.uid,binId,profile.pseudo,profile.avatar);}
   }catch(e){console.warn('save err',e);}
 }
 async function loadProfileRemote(uid){
-  const binId=localStorage.getItem(lsBin(uid));
-  if(!binId)return null;
-  try{
-    const data=await jbRead(binId);
-    if(data){
-      const{gameState:gs,...prof}=data;
-      profile=prof; gameState=gs||loadGameLS()||defaultGame();
-      saveProfileLS(); saveGame(); return profile;
-    }
-  }catch(e){}
+  const binId=localStorage.getItem(lsBin(uid));if(!binId)return null;
+  try{const data=await jbRead(binId);if(data){const{gameState:gs,...prof}=data;profile=prof;gameState=gs||loadGameLS()||defaultGame();if(!gameState.pendingTrades)gameState.pendingTrades=[];saveProfileLS();saveGame();return profile;}}catch(e){}
   return null;
 }
 async function createNewProfile(uid,pseudo){
@@ -186,11 +312,8 @@ async function createNewProfile(uid,pseudo){
   profile={uid,pseudo,avatar:'😀',friendCode,binId:null,friends:[],packsOpened:0};
   gameState=defaultGame();
   const binId=await jbCreate({...profile,gameState});
-  profile.binId=binId;
-  localStorage.setItem(lsBin(uid),binId);
-  saveProfileLS(); saveGame();
-  await registerCode(friendCode,uid,binId,pseudo,'😀');
-  return profile;
+  profile.binId=binId;localStorage.setItem(lsBin(uid),binId);saveProfileLS();saveGame();
+  await registerCode(friendCode,uid,binId,pseudo,'😀');return profile;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -199,113 +322,216 @@ async function createNewProfile(uid,pseudo){
 auth.onAuthStateChanged(async user=>{
   hideLoading();
   if(user){
-    currentUser=user;
-    setLoading('Chargement du profil…');
+    currentUser=user;setLoading('Chargement du profil…');
     const cached=loadProfileLS();
     if(cached&&cached.uid===user.uid){
-      profile=cached; gameState=loadGameLS()||defaultGame();
-      hideLoading(); enterApp();
+      profile=cached;gameState=loadGameLS()||defaultGame();
+      if(!gameState.pendingTrades)gameState.pendingTrades=[];
+      hideLoading();enterApp();
       loadProfileRemote(user.uid).then(p=>{if(p)updateUI();});
     } else {
-      const remote=await loadProfileRemote(user.uid);
-      hideLoading();
+      const remote=await loadProfileRemote(user.uid);hideLoading();
       if(remote){enterApp();}
       else if(user.providerData[0]?.providerId==='google.com'){showPseudoPrompt(user);}
       else{showAuthPage();}
     }
-  } else {
-    currentUser=null;profile=null;gameState=null;
-    showAuthPage();
-  }
+  } else {currentUser=null;profile=null;gameState=null;showAuthPage();}
 });
 
-function showAuthPage(){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-auth').classList.add('active');
-  document.getElementById('mainNavbar').style.display='none';
-}
+function showAuthPage(){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-auth').classList.add('active');document.getElementById('mainNavbar').style.display='none';}
 
 async function loginUser(){
-  const email=document.getElementById('loginEmail').value.trim();
-  const pass=document.getElementById('loginPassword').value;
+  const email=document.getElementById('loginEmail').value.trim(),pass=document.getElementById('loginPassword').value;
   if(!email||!pass){setAuthError('authError','⚠️ Remplis tous les champs');return;}
   try{setLoading('Connexion…');await auth.signInWithEmailAndPassword(email,pass);}
   catch(e){hideLoading();setAuthError('authError',firebaseErrMsg(e.code));}
 }
-
 async function registerUser(){
-  const pseudo=document.getElementById('regPseudo').value.trim();
-  const email=document.getElementById('regEmail').value.trim();
-  const pass=document.getElementById('regPassword').value;
+  const pseudo=document.getElementById('regPseudo').value.trim(),email=document.getElementById('regEmail').value.trim(),pass=document.getElementById('regPassword').value;
   if(pseudo.length<2||pseudo.length>20){setAuthError('regError','⚠️ Pseudo : 2 à 20 caractères');return;}
   if(!email||pass.length<6){setAuthError('regError','⚠️ Email valide + 6+ caractères');return;}
   setLoading('Vérification…');
   try{
-    const idxId=await getIndexBin();
-    const idx=await jbRead(idxId)||{codes:{}};
+    const idxId=await getIndexBin();const idx=await jbRead(idxId)||{codes:{}};
     const taken=Object.values(idx.codes||{}).find(v=>v.pseudo?.toLowerCase()===pseudo.toLowerCase());
     if(taken){hideLoading();setAuthError('regError','❌ Pseudo déjà pris !');return;}
-    setLoading('Création du compte…');
-    const cred=await auth.createUserWithEmailAndPassword(email,pass);
+    setLoading('Création du compte…');const cred=await auth.createUserWithEmailAndPassword(email,pass);
     await createNewProfile(cred.user.uid,pseudo);
   }catch(e){hideLoading();setAuthError('regError',firebaseErrMsg(e.code));}
 }
-
 async function loginGoogle(){
   try{
     setLoading('Connexion Google…');
     const provider=new firebase.auth.GoogleAuthProvider();
-    const result=await auth.signInWithPopup(provider);
-    const binId=localStorage.getItem(lsBin(result.user.uid));
-    if(!binId){hideLoading();showPseudoPrompt(result.user);}
+    // Detect WebView / mobile app — use redirect instead of popup
+    const isWebView=/wv|WebView/.test(navigator.userAgent)||(navigator.userAgent.includes('Android')&&!navigator.userAgent.includes('Chrome/'));
+    if(isWebView){
+      await auth.signInWithRedirect(provider);
+      // Page will reload — getRedirectResult handled in onAuthStateChanged
+    } else {
+      const result=await auth.signInWithPopup(provider);
+      const binId=localStorage.getItem(lsBin(result.user.uid));
+      if(!binId){hideLoading();showPseudoPrompt(result.user);}
+    }
   }catch(e){hideLoading();if(e.code!=='auth/popup-closed-by-user')showToast('❌ '+firebaseErrMsg(e.code));}
 }
 
-async function doLogout(){
-  closeModal('logoutModal');setLoading('Déconnexion…');
-  localStorage.removeItem(LS_PROFILE);
-  await auth.signOut();hideLoading();
+async function checkRedirectResult(){
+  try{
+    const result=await auth.getRedirectResult();
+    if(result&&result.user){
+      const binId=localStorage.getItem(lsBin(result.user.uid));
+      if(!binId){hideLoading();showPseudoPrompt(result.user);}
+    }
+  }catch(e){hideLoading();showToast('❌ '+firebaseErrMsg(e.code));}
 }
+async function doLogout(){closeModal('logoutModal');setLoading('Déconnexion…');localStorage.removeItem(LS_PROFILE);await auth.signOut();hideLoading();}
 function confirmLogout(){document.getElementById('logoutModal').classList.add('active');}
-
 function showPseudoPrompt(user){
   const modal=document.getElementById('resetModal');
-  modal.innerHTML=`<div class="card-modal-inner" onclick="event.stopPropagation()">
-    <div style="font-size:46px;text-align:center">😀</div>
-    <div class="card-modal-name">Choisis ton pseudo</div>
-    <input class="p-input" id="googlePseudo" placeholder="Pseudo (2–20 caractères)" maxlength="20" style="width:100%;margin:10px 0">
-    <button class="btn-profile-action" onclick="confirmGooglePseudo('${user.uid}')">✅ Confirmer</button>
-    <div id="gPseudoErr" style="color:var(--red);font-size:13px;text-align:center;min-height:16px"></div>
-  </div>`;
+  modal.innerHTML=`<div class="card-modal-inner" onclick="event.stopPropagation()"><div style="font-size:46px;text-align:center">😀</div><div class="card-modal-name">Choisis ton pseudo</div><input class="p-input" id="googlePseudo" placeholder="Pseudo (2–20 caractères)" maxlength="20" style="width:100%;margin:10px 0"><button class="btn-profile-action" onclick="confirmGooglePseudo('${user.uid}')">✅ Confirmer</button><div id="gPseudoErr" style="color:var(--red);font-size:13px;text-align:center;min-height:16px"></div></div>`;
   modal.classList.add('active');
 }
 async function confirmGooglePseudo(uid){
   const pseudo=document.getElementById('googlePseudo').value.trim();
   if(pseudo.length<2||pseudo.length>20){document.getElementById('gPseudoErr').textContent='⚠️ 2 à 20 caractères';return;}
-  setLoading('Création du profil…');closeModal('resetModal');
-  await createNewProfile(uid,pseudo);
-  hideLoading();enterApp();
+  setLoading('Création du profil…');closeModal('resetModal');await createNewProfile(uid,pseudo);hideLoading();enterApp();
 }
-
-function firebaseErrMsg(code){
-  const m={'auth/invalid-email':'❌ Email invalide','auth/wrong-password':'❌ Mot de passe incorrect',
-    'auth/invalid-credential':'❌ Email ou mot de passe incorrect',
-    'auth/user-not-found':'❌ Aucun compte avec cet email',
-    'auth/email-already-in-use':'❌ Email déjà utilisé','auth/weak-password':'❌ Mot de passe trop court',
-    'auth/too-many-requests':'⚠️ Trop de tentatives, réessaie plus tard'};
-  return m[code]||'❌ Erreur : '+code;
-}
+function firebaseErrMsg(code){const m={'auth/invalid-email':'❌ Email invalide','auth/wrong-password':'❌ Mot de passe incorrect','auth/invalid-credential':'❌ Email ou mot de passe incorrect','auth/user-not-found':'❌ Aucun compte avec cet email','auth/email-already-in-use':'❌ Email déjà utilisé','auth/weak-password':'❌ Mot de passe trop court','auth/too-many-requests':'⚠️ Trop de tentatives'};return m[code]||'❌ Erreur : '+code;}
 function setAuthError(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;el.style.color='var(--red)';}}
-
 function switchAuthTab(tab){
-  const slider=document.getElementById("authTabSlider");
-  if(slider) slider.classList.toggle("right", tab==="register");
+  const slider=document.getElementById('authTabSlider');if(slider)slider.classList.toggle('right',tab==='register');
   document.getElementById('tabLogin').classList.toggle('active',tab==='login');
   document.getElementById('tabRegister').classList.toggle('active',tab==='register');
   document.getElementById('authLogin').style.display=tab==='login'?'':'none';
   document.getElementById('authRegister').style.display=tab==='register'?'':'none';
-  document.getElementById('authError').textContent='';
-  document.getElementById('regError').textContent='';
+  document.getElementById('authError').textContent='';document.getElementById('regError').textContent='';
+}
+
+// ══════════════════════════════════════════════════════════
+//  ÉCHANGES
+// ══════════════════════════════════════════════════════════
+function openTradeModal(friendUid,friendBinId,friendPseudo){
+  tradeData={giving:null,wanting:null,friendUid,friendBinId};
+  const modal=document.getElementById('tradeModal');
+  modal.querySelector('.trade-friend-name').textContent=friendPseudo;
+  renderTradeCardSelect('give');renderTradeCardSelect('want');
+  updateTradeSendBtn();
+  modal.classList.add('active');
+}
+function renderTradeCardSelect(side){
+  const ext=currentExt();const container=document.getElementById(side==='give'?'tradeGiveGrid':'tradeWantGrid');
+  container.innerHTML='';
+  ext.cards.forEach(card=>{
+    const ownedCount=(gameState.collection[card.id]?.count||0);
+    if(side==='give'&&ownedCount===0)return;
+    // Filter want by same rarity as give
+    if(side==='want'&&tradeData.giving&&card.rarity!==tradeData.giving.rarity)return;
+    const div=document.createElement('div');
+    div.className='trade-card-opt'+(
+      (side==='give'&&tradeData.giving?.id===card.id)||
+      (side==='want'&&tradeData.wanting?.id===card.id)?' selected':'');
+    div.style.background=getRarityBg(card.rarity);
+    div.style.opacity=side==='give'?1:(tradeData.giving?1:0.4);
+    loadCardImg(card,div,'6px');
+    div.onclick=()=>selectTradeCard(side,card);
+    container.appendChild(div);
+  });
+  const label=container.previousElementSibling;
+  if(label&&label.classList.contains('trade-side-label')){
+    label.textContent=t(side==='give'?'trade_give':'trade_receive');
+    if(side==='want'&&!tradeData.giving){
+      const hint=document.createElement('span');hint.style.cssText='font-size:11px;color:var(--text-muted);margin-left:6px';
+      hint.textContent=t('trade_same_rarity');label.appendChild(hint);
+    }
+  }
+}
+function selectTradeCard(side,card){
+  if(side==='give'){tradeData.giving=card;tradeData.wanting=null;renderTradeCardSelect('give');renderTradeCardSelect('want');}
+  else{tradeData.wanting=card;renderTradeCardSelect('want');}
+  updateTradeSendBtn();
+}
+function updateTradeSendBtn(){
+  const btn=document.getElementById('tradeSendBtn');if(!btn)return;
+  btn.disabled=!tradeData.giving||!tradeData.wanting;
+  btn.textContent=t('trade_send');
+}
+async function sendTrade(){
+  if(!tradeData.giving||!tradeData.wanting)return;
+  setLoading('Envoi…');
+  try{
+    const theirData=await jbRead(tradeData.friendBinId);
+    if(!theirData){hideLoading();showToast('❌ Erreur');return;}
+    if(!theirData.gameState.pendingTrades)theirData.gameState.pendingTrades=[];
+    theirData.gameState.pendingTrades.push({
+      id:Date.now()+'',fromUid:currentUser.uid,fromPseudo:profile.pseudo,fromAvatar:profile.avatar,
+      fromBinId:profile.binId,giving:tradeData.giving,wanting:tradeData.wanting
+    });
+    await jbUpdate(tradeData.friendBinId,theirData);
+  }catch(e){}
+  hideLoading();closeModal('tradeModal');showToast(t('trade_sent'));
+}
+async function acceptTrade(tradeId){
+  const trade=gameState.pendingTrades.find(t=>t.id===tradeId);if(!trade)return;
+  setLoading('Échange…');
+  // Vérifier qu'on possède la carte wanting
+  const haveCard=gameState.collection[trade.wanting.id]?.count>0;
+  if(!haveCard){hideLoading();showToast('❌ Tu ne possèdes plus cette carte');gameState.pendingTrades=gameState.pendingTrades.filter(t=>t.id!==tradeId);saveProfile();renderPendingTrades();return;}
+  // Donner la carte wanting, recevoir giving
+  gameState.collection[trade.wanting.id].count--;
+  if(gameState.collection[trade.wanting.id].count<=0)delete gameState.collection[trade.wanting.id];
+  if(!gameState.collection[trade.giving.id])gameState.collection[trade.giving.id]={count:0,isNew:true};
+  gameState.collection[trade.giving.id].count++;gameState.collection[trade.giving.id].isNew=true;
+  gameState.pendingTrades=gameState.pendingTrades.filter(t=>t.id!==tradeId);
+  saveProfile();
+  // Donner la carte wanted à l'expéditeur, retirer giving
+  try{
+    const theirData=await jbRead(trade.fromBinId);
+    if(theirData){
+      if(!theirData.gameState.collection[trade.wanting.id])theirData.gameState.collection[trade.wanting.id]={count:0,isNew:true};
+      theirData.gameState.collection[trade.wanting.id].count++;theirData.gameState.collection[trade.wanting.id].isNew=true;
+      if(theirData.gameState.collection[trade.giving.id]){theirData.gameState.collection[trade.giving.id].count--;if(theirData.gameState.collection[trade.giving.id].count<=0)delete theirData.gameState.collection[trade.giving.id];}
+      await jbUpdate(trade.fromBinId,theirData);
+    }
+  }catch(e){}
+  hideLoading();showToast(t('trade_accepted'));renderPendingTrades();updateOwnedCount();updateProfileStats();
+}
+function declineTrade(tradeId){
+  gameState.pendingTrades=gameState.pendingTrades.filter(t=>t.id!==tradeId);
+  saveProfile();renderPendingTrades();showToast(t('trade_declined'));
+}
+function renderPendingTrades(){
+  const container=document.getElementById('pendingTradesContainer');if(!container)return;
+  const trades=gameState?.pendingTrades||[];
+  const title=container.previousElementSibling;if(title)title.textContent=t('trade_pending');
+  if(!trades.length){container.innerHTML=`<div class="friends-empty">${t('trade_no_pending')}</div>`;return;}
+  container.innerHTML='';
+  trades.forEach(trade=>{
+    const div=document.createElement('div');div.className='trade-pending-item';
+    div.innerHTML=`
+      <div class="trade-pending-header">
+        <span class="friend-avatar">${trade.fromAvatar||'😀'}</span>
+        <span class="friend-pseudo">${trade.fromPseudo}</span>
+      </div>
+      <div class="trade-pending-cards">
+        <div class="trade-mini-card" style="background:${getRarityBg(trade.giving.rarity)}">
+          <div style="font-size:10px;color:#fff;font-weight:800;margin-bottom:2px">${RARITY_LABELS[trade.giving.rarity]}</div>
+          <div style="font-size:11px;color:#fff">${trade.giving.name}</div>
+          <div style="font-size:10px;opacity:0.7">→ Tu reçois</div>
+        </div>
+        <div style="font-size:20px;align-self:center">⇄</div>
+        <div class="trade-mini-card" style="background:${getRarityBg(trade.wanting.rarity)}">
+          <div style="font-size:10px;color:#fff;font-weight:800;margin-bottom:2px">${RARITY_LABELS[trade.wanting.rarity]}</div>
+          <div style="font-size:11px;color:#fff">${trade.wanting.name}</div>
+          <div style="font-size:10px;opacity:0.7">→ Tu donnes</div>
+        </div>
+      </div>
+      <div class="trade-pending-actions">
+        <button class="btn-trade-accept" onclick="acceptTrade('${trade.id}')">${t('trade_accept')}</button>
+        <button class="btn-trade-decline" onclick="declineTrade('${trade.id}')">${t('trade_decline')}</button>
+      </div>`;
+    container.appendChild(div);
+  });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -313,57 +539,120 @@ function switchAuthTab(tab){
 // ══════════════════════════════════════════════════════════
 async function addFriend(){
   const code=document.getElementById('friendCodeInput').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
-  const result=document.getElementById('friendSearchResult');
-  result.innerHTML='';
-  if(!code){showToast('⚠️ Entre un code ami');return;}
-  if(code===profile.friendCode){showToast('😅 C\'est ton propre code !');return;}
-  if((profile.friends||[]).find(f=>f.friendCode===code)){showToast('👫 Déjà ami !');return;}
-  result.innerHTML='<div class="friends-empty">🔍 Recherche…</div>';
+  const result=document.getElementById('friendSearchResult');result.innerHTML='';
+  if(!code){showToast(t('own_code').replace('ton propre','un'));return;}
+  if(code===profile.friendCode){showToast(t('own_code'));return;}
+  if((profile.friends||[]).find(f=>f.friendCode===code)){showToast(t('already_friend'));return;}
+  result.innerHTML=`<div class="friends-empty">${t('searching')}</div>`;
   const found=await lookupCode(code);
-  if(!found){result.innerHTML='<div class="friends-empty">❌ Code introuvable</div>';return;}
-  result.innerHTML=`<div class="friend-row" style="animation:badgePop 0.3s ease">
-    <div class="friend-avatar">${found.avatar||'😀'}</div>
-    <div class="friend-info"><div class="friend-pseudo">${found.pseudo}</div><div class="friend-level">${code}</div></div>
-    <button class="btn-add-friend" onclick="confirmAddFriend('${found.uid}','${found.pseudo}','${found.avatar||'😀'}','${code}','${found.binId}')">+ Ajouter</button>
-  </div>`;
+  if(!found){result.innerHTML=`<div class="friends-empty">${t('not_found')}</div>`;return;}
+  result.innerHTML=`<div class="friend-row"><div class="friend-avatar">${found.avatar||'😀'}</div><div class="friend-info"><div class="friend-pseudo">${found.pseudo}</div><div class="friend-level">${code}</div></div><button class="btn-add-friend" onclick="confirmAddFriend('${found.uid}','${found.pseudo}','${found.avatar||'😀'}','${code}','${found.binId}')">+ Ajouter</button></div>`;
 }
 async function confirmAddFriend(uid,pseudo,avatar,code,binId){
-  document.getElementById('friendSearchResult').innerHTML='';
-  document.getElementById('friendCodeInput').value='';
+  document.getElementById('friendSearchResult').innerHTML='';document.getElementById('friendCodeInput').value='';
   if(!profile.friends)profile.friends=[];
   profile.friends.push({uid,pseudo,avatar,friendCode:code,binId});
-  saveProfile();renderFriends();updateProfileStats();
-  showToast(`👫 ${pseudo} ajouté !`);
-  try{
-    const theirData=await jbRead(binId);
-    if(theirData){
-      if(!theirData.friends)theirData.friends=[];
-      if(!theirData.friends.find(f=>f.uid===currentUser.uid)){
-        theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode,binId:profile.binId});
-        await jbUpdate(binId,theirData);
-      }
-    }
-  }catch(e){}
+  saveProfile();renderFriends();updateProfileStats();showToast(t('friend_added',{name:pseudo}));
+  try{const theirData=await jbRead(binId);if(theirData){if(!theirData.friends)theirData.friends=[];if(!theirData.friends.find(f=>f.uid===currentUser.uid)){theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode,binId:profile.binId});await jbUpdate(binId,theirData);}}}catch(e){}
 }
-function removeFriend(uid){
-  profile.friends=(profile.friends||[]).filter(f=>f.uid!==uid);
-  saveProfile();renderFriends();updateProfileStats();showToast('❌ Ami retiré');
-}
+function removeFriend(uid){profile.friends=(profile.friends||[]).filter(f=>f.uid!==uid);saveProfile();renderFriends();updateProfileStats();showToast(t('friend_removed'));}
+
 function renderFriends(){
   const list=document.getElementById('friendsList');list.innerHTML='';
   const friends=profile?.friends||[];
-  if(!friends.length){list.innerHTML='<div class="friends-empty">Aucun ami 😢<br>Partage ton code ami !</div>';return;}
+  if(!friends.length){list.innerHTML=`<div class="friends-empty">${t('no_friends')}</div>`;return;}
   friends.forEach(f=>{
     const row=document.createElement('div');row.className='friend-row';
     row.innerHTML=`<div class="friend-avatar">${f.avatar||'😀'}</div>
       <div class="friend-info"><div class="friend-pseudo">${f.pseudo}</div><div class="friend-level">${f.friendCode}</div></div>
-      <button class="friend-remove" onclick="removeFriend('${f.uid}')">✕</button>`;
+      <button class="friend-action-btn" onclick="openFriendProfile('${f.uid}','${f.pseudo}','${f.avatar||'😀'}','${f.binId}')" title="${t('view_profile')}">👁</button>
+      <button class="friend-action-btn" onclick="openTradeModal('${f.uid}','${f.binId}','${f.pseudo}')" title="${t('propose_trade')}">🔄</button>
+      <button class="friend-remove" onclick="removeFriend('${f.uid}')" title="${t('remove_friend')}">✕</button>`;
     list.appendChild(row);
   });
 }
 
 // ══════════════════════════════════════════════════════════
-//  NAVIGATION & UI
+//  PROFIL AMI
+// ══════════════════════════════════════════════════════════
+async function openFriendProfile(uid,pseudo,avatar,binId){
+  setLoading('Chargement…');
+  let friendGameState=null;
+  try{const data=await jbRead(binId);if(data)friendGameState=data.gameState;}catch(e){}
+  hideLoading();
+  const modal=document.getElementById('friendProfileModal');
+  const ext=currentExt();
+  const total=Object.values(friendGameState?.collection||{}).reduce((s,v)=>s+(v.count||0),0);
+  const uniq=Object.keys(friendGameState?.collection||{}).length;
+  const lv=getLevel(total);
+  modal.querySelector('.fp-avatar').textContent=avatar;
+  modal.querySelector('.fp-pseudo').textContent=pseudo;
+  modal.querySelector('.fp-level').textContent=`Niv. ${lv.num} · ${lv.label}`;
+  modal.querySelector('.fp-stat-cards').textContent=total;
+  modal.querySelector('.fp-stat-uniq').textContent=uniq;
+  // Render collection
+  const grid=modal.querySelector('.fp-collection-grid');grid.innerHTML='';
+  ext.cards.forEach(card=>{
+    const owned=friendGameState?.collection?.[card.id];
+    const item=document.createElement('div');item.className='card-item'+(owned?` owned r-${card.rarity}`:'');
+    if(owned){loadCardImg(card,item,'8px');addRarityDot(item,card.rarity);}
+    else{item.innerHTML=`<div class="card-item-placeholder unknown"><div class="card-num">#${String(card.num).padStart(3,'0')}</div></div>`;}
+    grid.appendChild(item);
+  });
+  modal.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════
+//  GUIDE
+// ══════════════════════════════════════════════════════════
+function renderGuide(){
+  const c=document.getElementById('guideContent');if(!c)return;
+  c.innerHTML=`
+    <div class="guide-section">
+      <p class="guide-intro">${t('guide_intro')}</p>
+    </div>
+    <div class="guide-section">
+      <div class="guide-section-title">${t('guide_pack_title')}</div>
+      <p>${t('guide_pack_text')}</p>
+      <div class="guide-stats-row">
+        <div class="guide-stat"><span class="guide-stat-val">2</span><span class="guide-stat-lbl">Recharges max</span></div>
+        <div class="guide-stat"><span class="guide-stat-val">6h</span><span class="guide-stat-lbl">Entre chaque</span></div>
+        <div class="guide-stat"><span class="guide-stat-val">3</span><span class="guide-stat-lbl">Cartes/booster</span></div>
+      </div>
+    </div>
+    <div class="guide-section">
+      <div class="guide-section-title">${t('guide_rarity_title')}</div>
+      <div class="guide-section-title" style="font-size:13px;margin-bottom:8px">${t('guide_drop_title')}</div>
+      ${[
+        {r:'basique',label:t('guide_rarity_basique'),rate:t('guide_rate_basique')},
+        {r:'rare',label:t('guide_rarity_rare'),rate:t('guide_rate_rare')},
+        {r:'fullart',label:t('guide_rarity_fullart'),rate:t('guide_rate_fullart')},
+        {r:'gold',label:t('guide_rarity_gold'),rate:t('guide_rate_gold')},
+      ].map(row=>`
+        <div class="guide-rarity-row">
+          <div class="guide-rarity-badge rarity-${row.r}">${RARITY_LABELS[row.r]}</div>
+          <div class="guide-rarity-label">${row.label}</div>
+          <div class="guide-rarity-rate">${row.rate}</div>
+          <div class="guide-rarity-bar"><div class="guide-rarity-fill" style="width:${row.rate};background:${getRarityBg(row.r)}"></div></div>
+        </div>`).join('')}
+    </div>
+    <div class="guide-section">
+      <div class="guide-section-title">${t('guide_trade_title')}</div>
+      <p>${t('guide_trade_text')}</p>
+    </div>
+    <div class="guide-section">
+      <div class="guide-section-title">${t('guide_level_title')}</div>
+      <p>${t('guide_level_text')}</p>
+      <div class="guide-levels">${t('guide_levels')}</div>
+    </div>
+    <div class="guide-section">
+      <div class="guide-section-title">${t('guide_friend_title')}</div>
+      <p>${t('guide_friend_text')}</p>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION
 // ══════════════════════════════════════════════════════════
 function enterApp(){
   document.getElementById('mainNavbar').style.display='flex';
@@ -372,17 +661,21 @@ function enterApp(){
 }
 function updateUI(){
   if(!profile||!gameState)return;
-  updateHomeExt();updateCharges();renderCharges();updateTimer();updateOwnedCount();updateProfileView();
+  updateHomeExt();updateCharges();renderCharges();updateTimer();updateOwnedCount();updateProfileView();renderPendingTrades();
 }
 function showPage(name){
+  currentPage=name;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const page=document.getElementById('page-'+name);if(page)page.classList.add('active');
   const nav=document.getElementById('nav-'+name);if(nav)nav.classList.add('active');
   if(name==='collection')renderCollection();
   if(name==='extensions')renderExtensions();
-  if(name==='profile-view')updateProfileView();
+  if(name==='profile-view'){updateProfileView();renderPendingTrades();}
+  if(name==='guide')renderGuide();
 }
+
+// ── Profil view ──────────────────────────────────────────
 function updateProfileView(){
   if(!profile||!gameState)return;
   document.getElementById('userAvatar').textContent=profile.avatar;
@@ -405,72 +698,53 @@ function updateProfileStats(){
 }
 function renderAvatarGrid(){
   const grid=document.getElementById('avatarGrid');grid.innerHTML='';
-  AVATARS.forEach(av=>{
-    const d=document.createElement('div');d.className='avatar-opt'+(profile.avatar===av?' selected':'');
-    d.textContent=av;d.onclick=()=>selectAvatar(av);grid.appendChild(d);
-  });
+  AVATARS.forEach(av=>{const d=document.createElement('div');d.className='avatar-opt'+(profile.avatar===av?' selected':'');d.textContent=av;d.onclick=()=>selectAvatar(av);grid.appendChild(d);});
 }
 async function selectAvatar(av){
   profile.avatar=av;saveProfile();renderAvatarGrid();
-  document.getElementById('pvAvatar').textContent=av;
-  document.getElementById('userAvatar').textContent=av;
+  document.getElementById('pvAvatar').textContent=av;document.getElementById('userAvatar').textContent=av;
   await updateAvatarIndex(profile.friendCode,av);
 }
 function copyFriendCode(){navigator.clipboard?.writeText(profile.friendCode).then(()=>showToast('📋 Code copié !'));}
 
-function getExt(id){return EXTENSIONS.find(e=>e.id===id)||EXTENSIONS[0];}
-function currentExt(){return getExt(gameState?.currentExt||'Lycee');}
-function getRarityBg(r){return{basique:'linear-gradient(135deg,#94a3b8,#64748b)',rare:'linear-gradient(135deg,#93c5fd,#3b82f6)',fullart:'linear-gradient(135deg,#c4b5fd,#8b5cf6)',gold:'linear-gradient(135deg,#fde68a,#f59e0b)'}[r]||'linear-gradient(135deg,#e2e8f0,#cbd5e1)';}
-
+// ── Extension ────────────────────────────────────────────
 function updateHomeExt(){
-  if(!gameState)return;
-  const ext=currentExt();
-  document.getElementById('extStripIcon').textContent=ext.icon;
-  document.getElementById('extStripName').textContent=ext.name;
-  document.getElementById('boosterExtName').textContent=ext.name;
-  document.getElementById('boosterTapExtName').textContent=ext.name;
+  if(!gameState)return;const ext=currentExt();
+  document.getElementById('extStripIcon').textContent=ext.icon;document.getElementById('extStripName').textContent=ext.name;
+  document.getElementById('boosterExtName').textContent=ext.name;document.getElementById('boosterTapExtName').textContent=ext.name;
 }
 function renderExtensions(){
   const list=document.getElementById('extList');list.innerHTML='';
   EXTENSIONS.forEach(ext=>{
-    const div=document.createElement('div');
-    div.className='ext-card'+(ext.id===gameState?.currentExt?' selected':'');
+    const div=document.createElement('div');div.className='ext-card'+(ext.id===gameState?.currentExt?' selected':'');
     const owned=ext.cards.filter(c=>gameState?.collection?.[c.id]).length;
     div.innerHTML=`<div class="ext-card-icon">${ext.icon}</div><div class="ext-card-info"><div class="ext-card-name">${ext.name}</div><div class="ext-card-sub">${owned}/${ext.cards.length} cartes · ${ext.desc}</div></div>${ext.id===gameState?.currentExt?'<div class="ext-selected-badge">✓ Active</div>':''}`;
     div.onclick=()=>selectExtension(ext.id);list.appendChild(div);
   });
 }
-function selectExtension(id){
-  gameState.currentExt=id;saveProfile();updateHomeExt();renderExtensions();
-  showToast(`${getExt(id).icon} ${getExt(id).name}`);setTimeout(()=>showPage('home'),500);
-}
+function selectExtension(id){gameState.currentExt=id;saveProfile();updateHomeExt();renderExtensions();showToast(`${getExt(id).icon} ${getExt(id).name}`);setTimeout(()=>showPage('home'),500);}
 
+// ── Charges ──────────────────────────────────────────────
 function updateCharges(){
   if(!gameState)return;
-  const elapsed=Date.now()-gameState.lastChargeTime;
-  const gained=Math.floor(elapsed/CHARGE_INTERVAL);
-  if(gained>0&&gameState.charges<MAX_CHARGES){
-    gameState.charges=Math.min(MAX_CHARGES,gameState.charges+gained);
-    gameState.lastChargeTime+=gained*CHARGE_INTERVAL;
-    saveProfile();
-  }
+  const elapsed=Date.now()-gameState.lastChargeTime,gained=Math.floor(elapsed/CHARGE_INTERVAL);
+  if(gained>0&&gameState.charges<MAX_CHARGES){gameState.charges=Math.min(MAX_CHARGES,gameState.charges+gained);gameState.lastChargeTime+=gained*CHARGE_INTERVAL;saveProfile();}
 }
 function renderCharges(){
   if(!gameState)return;
-  for(let i=0;i<4;i++)document.getElementById('pip'+i).classList.toggle('filled',i<gameState.charges);
+  for(let i=0;i<MAX_CHARGES;i++){const p=document.getElementById('pip'+i);if(p)p.classList.toggle('filled',i<gameState.charges);}
   document.getElementById('btnOpen').disabled=gameState.charges<=0;
 }
 function updateTimer(){
   if(!gameState)return;
-  const el=document.getElementById('chargesTimer');
+  const el=document.getElementById('chargesTimer');if(!el)return;
   if(gameState.charges>=MAX_CHARGES){el.innerHTML=`<span>${t('charges_full')}</span>`;return;}
   const rem=Math.max(0,gameState.lastChargeTime+CHARGE_INTERVAL-Date.now());
-  const h=String(Math.floor(rem/3600000)).padStart(2,'0');
-  const m=String(Math.floor(rem%3600000/60000)).padStart(2,'0');
-  const s=String(Math.floor(rem%60000/1000)).padStart(2,'0');
+  const h=String(Math.floor(rem/3600000)).padStart(2,'0'),m=String(Math.floor(rem%3600000/60000)).padStart(2,'0'),s=String(Math.floor(rem%60000/1000)).padStart(2,'0');
   el.innerHTML=`${t('next_charge')} <span>${h}:${m}:${s}</span>`;
 }
 
+// ── Booster ──────────────────────────────────────────────
 function rollRarity(){const r=Math.random()*100;if(r<1)return'gold';if(r<6)return'fullart';if(r<26)return'rare';return'basique';}
 function rollCard(){const ext=currentExt();const pool=ext.cards.filter(c=>c.rarity===rollRarity());const cards=pool.length?pool:ext.cards;return cards[Math.floor(Math.random()*cards.length)];}
 function openBooster(){
@@ -484,34 +758,28 @@ function showStage(id){['stageBooster','stageCards','stageRecap'].forEach(s=>{do
 function startReveal(){spawnParticles('basique');setTimeout(()=>{showStage('stageCards');showCurrentCard();},250);}
 function showCurrentCard(){
   const card=pendingCards[revealIndex];
-  document.getElementById('revealCounter').textContent=`Carte ${revealIndex+1} / ${CARDS_PER_PACK}`;
+  document.getElementById('revealCounter').textContent=`${t('card_lbl')} ${revealIndex+1} ${t('of_lbl')} ${CARDS_PER_PACK}`;
   document.getElementById('revealedCardName').textContent=card.name;
   const rb=document.getElementById('revealedCardRarity');rb.textContent=RARITY_LABELS[card.rarity];rb.className='card-rarity-badge rarity-'+card.rarity;
   const wrap=document.getElementById('revealedCardWrap');wrap.style.animation='none';wrap.offsetHeight;wrap.style.animation='';
   document.getElementById('revealedCard').className='revealed-card reveal-glow-'+card.rarity;
   const content=document.getElementById('revealedCardContent');content.innerHTML='';loadCardImg(card,content,'12px');
   spawnParticles(card.rarity);
-  document.getElementById('btnNextCard').textContent=revealIndex<CARDS_PER_PACK-1?'Suivant ➡️':'🎉 Voir le récap !';
+  document.getElementById('btnNextCard').textContent=revealIndex<CARDS_PER_PACK-1?t('next_card'):t('see_recap');
 }
 function nextReveal(){revealIndex++;if(revealIndex<CARDS_PER_PACK)showCurrentCard();else showRecap();}
 function showRecap(){
   showStage('stageRecap');
+  document.querySelector('.recap-title').textContent=t('recap_title');
+  document.querySelector('.btn-collect-all').textContent=t('add_all');
   const grid=document.getElementById('recapGrid');grid.innerHTML='';
-  pendingCards.forEach((card,i)=>{
-    const div=document.createElement('div');div.className='recap-card-mini';div.style.setProperty('--delay',(i*0.08)+'s');div.style.background=getRarityBg(card.rarity);
-    loadCardImg(card,div,'6px');grid.appendChild(div);
-  });
+  pendingCards.forEach((card,i)=>{const div=document.createElement('div');div.className='recap-card-mini';div.style.setProperty('--delay',(i*0.08)+'s');div.style.background=getRarityBg(card.rarity);loadCardImg(card,div,'6px');grid.appendChild(div);});
   spawnParticles('gold');
 }
 function collectAll(){
-  pendingCards.forEach(card=>{
-    if(!gameState.collection[card.id])gameState.collection[card.id]={count:0,isNew:true};
-    gameState.collection[card.id].count++;gameState.collection[card.id].isNew=true;
-  });
-  saveProfile();pendingCards=[];
-  document.getElementById('boosterOverlay').classList.remove('active');
-  document.getElementById('particles').innerHTML='';
-  showToast('🎉 5 cartes ajoutées !');updateOwnedCount();updateProfileStats();
+  pendingCards.forEach(card=>{if(!gameState.collection[card.id])gameState.collection[card.id]={count:0,isNew:true};gameState.collection[card.id].count++;gameState.collection[card.id].isNew=true;});
+  saveProfile();pendingCards=[];document.getElementById('boosterOverlay').classList.remove('active');document.getElementById('particles').innerHTML='';
+  showToast(t('cards_added'));updateOwnedCount();updateProfileStats();
 }
 function loadCardImg(card,container,radius){
   const img=new Image();
@@ -519,29 +787,23 @@ function loadCardImg(card,container,radius){
   img.onerror=()=>{container.innerHTML=`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${getRarityBg(card.rarity)};border-radius:${radius};font-size:28px">${card.emoji}</div>`};
   img.src=card.img;
 }
+
+// ── Collection ───────────────────────────────────────────
 function renderCollection(){
   if(!gameState)return;
   const ext=currentExt();const grid=document.getElementById('collectionGrid');grid.innerHTML='';
-  document.getElementById('collectionExtLabel').textContent=`${ext.icon} Extension ${ext.name}`;
-  updateOwnedCount();
+  document.getElementById('collectionExtLabel').textContent=`${ext.icon} Extension ${ext.name}`;updateOwnedCount();
   ext.cards.forEach(card=>{
     const owned=gameState.collection[card.id];
     const item=document.createElement('div');item.className='card-item'+(owned?` owned r-${card.rarity}`:'');
-    if(owned){
-      loadCardImg(card,item,'8px');
-      if(owned.isNew){const b=document.createElement('div');b.className='new-badge';b.textContent='New!';item.appendChild(b);}
-      if(owned.count>1){const b=document.createElement('div');b.className='count-badge';b.textContent=`×${owned.count}`;item.appendChild(b);}
-      addRarityDot(item,card.rarity);item.onclick=()=>openCardModal(card);
-    }else{
-      item.innerHTML=`<div class="card-item-placeholder unknown"><div class="card-shadow-icon">🃏</div><div class="card-num">#${String(card.num).padStart(3,'0')}</div></div>`;
-    }
+    if(owned){loadCardImg(card,item,'8px');if(owned.isNew){const b=document.createElement('div');b.className='new-badge';b.textContent='New!';item.appendChild(b);}if(owned.count>1){const b=document.createElement('div');b.className='count-badge';b.textContent=`×${owned.count}`;item.appendChild(b);}addRarityDot(item,card.rarity);item.onclick=()=>openCardModal(card);}
+    else{item.innerHTML=`<div class="card-item-placeholder unknown"><div class="card-shadow-icon">🃏</div><div class="card-num">#${String(card.num).padStart(3,'0')}</div></div>`;}
     grid.appendChild(item);
   });
 }
 function addRarityDot(item,rarity){const d=document.createElement('div');d.className=`card-rarity-dot dot-${rarity}`;item.appendChild(d);}
 function updateOwnedCount(){
-  if(!gameState)return;
-  const ext=currentExt();
+  if(!gameState)return;const ext=currentExt();
   document.getElementById('ownedCount').textContent=ext.cards.filter(c=>gameState.collection?.[c.id]).length;
   document.getElementById('totalCount').textContent=ext.cards.length;
 }
@@ -555,29 +817,21 @@ function openCardModal(card){
   document.getElementById('cardModal').classList.add('active');renderCollection();
 }
 function closeCardModal(){document.getElementById('cardModal').classList.remove('active');}
-function closeModal(id){document.getElementById(id).classList.remove('active');}
+function closeModal(id){const el=document.getElementById(id);if(el)el.classList.remove('active');}
 
+// ── Particles ────────────────────────────────────────────
 function spawnParticles(rarity){
   const pal={basique:['#94a3b8','#cbd5e1','#fff'],rare:['#3b82f6','#93c5fd','#fff'],fullart:['#8b5cf6','#c4b5fd','#fff','#f472b6'],gold:['#f59e0b','#fde68a','#fff','#fb923c']};
-  const cols=pal[rarity]||pal.basique;const count=rarity==='gold'?65:rarity==='fullart'?45:22;
+  const cols=pal[rarity]||pal.basique,count=rarity==='gold'?65:rarity==='fullart'?45:22;
   const cont=document.getElementById('particles');cont.innerHTML='';
-  let style=document.getElementById('particleStyle');
-  if(!style){style=document.createElement('style');style.id='particleStyle';document.head.appendChild(style);}
+  let style=document.getElementById('particleStyle');if(!style){style=document.createElement('style');style.id='particleStyle';document.head.appendChild(style);}
   const dx=(Math.random()>0.5?1:-1)*(50+Math.random()*120),dy=-(70+Math.random()*100);
   style.textContent=`@keyframes pfly{0%{transform:scale(1) translate(0,0);opacity:1}100%{transform:scale(0) translate(${dx}px,${dy}px);opacity:0}}`;
-  for(let i=0;i<count;i++){
-    const p=document.createElement('div');p.className='particle';
-    const col=cols[Math.floor(Math.random()*cols.length)],sz=4+Math.random()*8,x=15+Math.random()*70,y=15+Math.random()*70,dur=(0.4+Math.random()*0.8).toFixed(2);
-    p.style.cssText=`left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;background:${col};box-shadow:0 0 ${sz}px ${col};animation:pfly ${dur}s ease-out forwards;`;
-    cont.appendChild(p);
-  }
+  for(let i=0;i<count;i++){const p=document.createElement('div');p.className='particle';const col=cols[Math.floor(Math.random()*cols.length)],sz=4+Math.random()*8,x=15+Math.random()*70,y=15+Math.random()*70,dur=(0.4+Math.random()*0.8).toFixed(2);p.style.cssText=`left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;background:${col};box-shadow:0 0 ${sz}px ${col};animation:pfly ${dur}s ease-out forwards;`;cont.appendChild(p);}
 }
 
-function applyTheme(){
-  const dark=appCfg.dark;document.documentElement.setAttribute('data-theme',dark?'dark':'light');
-  const btn=document.getElementById('themeBtn');if(btn)btn.textContent=dark?'☀️':'🌙';
-  const dt=document.getElementById('darkToggle');if(dt)dt.checked=dark;
-}
+// ── Thème / Lang / Musique ────────────────────────────────
+function applyTheme(){const dark=appCfg.dark;document.documentElement.setAttribute('data-theme',dark?'dark':'light');const btn=document.getElementById('themeBtn');if(btn)btn.textContent=dark?'☀️':'🌙';const dt=document.getElementById('darkToggle');if(dt)dt.checked=dark;}
 function toggleDark(){setDark(!appCfg.dark);}
 function setDark(v){appCfg.dark=v;saveCfg();applyTheme();}
 function setLang(lang){appCfg.lang=lang;saveCfg();applyI18n();showToast('🌍 '+t('lang_name'));}
@@ -586,32 +840,20 @@ function tryStartMusic(){const audio=document.getElementById('bgMusic');audio.vo
 function toggleMusic(){const audio=document.getElementById('bgMusic');if(musicPlaying){audio.pause();musicPlaying=false;}else{audio.play().then(()=>{musicPlaying=true;}).catch(()=>{});}updateMusicBtn();}
 function updateMusicBtn(){const b=document.getElementById('musicBtn');if(b)b.textContent=musicPlaying?'🎵':'🔇';}
 
-function exportSave(){const data=btoa(JSON.stringify({profile,gameState}));navigator.clipboard?.writeText(data).then(()=>showToast('📋 Copié !'));}
-function showImportModal(){document.getElementById('importModal').classList.add('active');}
-function importSave(){
-  const raw=document.getElementById('importDataArea').value.trim();
-  if(!raw){showToast('⚠️ Colle un code');return;}
-  try{const p=JSON.parse(atob(raw));if(p.gameState){gameState=p.gameState;saveProfile();}closeModal('importModal');updateUI();showToast('✅ Importée !');}
-  catch(e){showToast('❌ Code invalide');}
-}
+// ── Reset ─────────────────────────────────────────────────
 function confirmReset(){document.getElementById('resetModal').classList.add('active');}
-function doReset(){gameState=defaultGame();saveProfile();closeModal('resetModal');updateUI();showToast('🗑️ Réinitialisé !');}
+function doReset(){
+  gameState=defaultGame();profile.packsOpened=0;
+  saveProfile();closeModal('resetModal');updateUI();showToast('🗑️ Réinitialisé !');
+}
 function requestNotifPermission(){if(!('Notification'in window)){showToast('⚠️ Non supporté');return;}Notification.requestPermission().then(p=>showToast(p==='granted'?'🔔 Activé !':'❌ Refusé'));}
 
 function setLoading(msg){document.getElementById('loadingScreen').style.display='flex';document.getElementById('loadingText').textContent=msg||'…';}
 function hideLoading(){document.getElementById('loadingScreen').style.display='none';}
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('show'),2400);}
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>el.classList.remove('show'),2400);}
 
-function initBg(){
-  const bc=document.getElementById('bgBubbles');
-  const cols=['#f472b6','#8b5cf6','#3b82f6','#facc15','#06b6d4','#22c55e'];
-  for(let i=0;i<8;i++){
-    const b=document.createElement('div');b.className='bubble';
-    const sz=80+Math.random()*200,col=cols[Math.floor(Math.random()*cols.length)];
-    b.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${col};--dur:${12+Math.random()*15}s;--delay:${-Math.random()*10}s;`;
-    bc.appendChild(b);
-  }
-}
+function initBg(){const bc=document.getElementById('bgBubbles');const cols=['#f472b6','#8b5cf6','#3b82f6','#facc15','#06b6d4','#22c55e'];for(let i=0;i<8;i++){const b=document.createElement('div');b.className='bubble';const sz=80+Math.random()*200,col=cols[Math.floor(Math.random()*cols.length)];b.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${col};--dur:${12+Math.random()*15}s;--delay:${-Math.random()*10}s;`;bc.appendChild(b);}}
+
 function initSettingsUI(){
   const sl=document.getElementById('volumeSlider');if(!sl)return;
   sl.value=appCfg.volume;sl.style.setProperty('--val',appCfg.volume+'%');
@@ -621,5 +863,17 @@ function initSettingsUI(){
   sl.addEventListener('input',function(){saveSetting('volume',parseInt(this.value));});
 }
 
-function init(){loadCfg();applyTheme();initBg();applyI18n();setLoading('Connexion…');}
+function init(){loadCfg();applyTheme();initBg();applyI18n();setLoading('Connexion…');checkRedirectResult();}
 document.addEventListener('DOMContentLoaded',init);
+
+Object.assign(window,{
+  switchAuthTab,loginUser,registerUser,loginGoogle,confirmGooglePseudo,checkRedirectResult,
+  confirmLogout,doLogout,closeModal,
+  showPage,toggleDark,setDark,setLang,toggleMusic,saveSetting,
+  openBooster,startReveal,nextReveal,collectAll,
+  closeCardModal,openCardModal,
+  addFriend,confirmAddFriend,removeFriend,
+  openFriendProfile,openTradeModal,selectTradeCard,sendTrade,acceptTrade,declineTrade,
+  copyFriendCode,selectAvatar,
+  confirmReset,doReset,requestNotifPermission
+});

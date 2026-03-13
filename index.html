@@ -15,129 +15,68 @@
 <div class="bg-bubbles" id="bgBubbles"></div>
 <audio id="bgMusic" src="musique/musique.mp3" loop></audio>
 
-<!-- ══════════════════════════════════════
-     ÉCRAN DE CHARGEMENT
-══════════════════════════════════════ -->
+<!-- LOADING -->
 <div id="loadingScreen" class="loading-screen">
   <div class="loading-logo">
-    <div class="auth-logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#0f173c"/>
-  <g transform="translate(60,55) rotate(12)">
-    <rect x="-20" y="-27" width="40" height="54" rx="3" fill="#d4af37"/>
-  </g>
-  <g transform="translate(45,50) rotate(-6)">
-    <rect x="-20" y="-27" width="40" height="54" rx="3" fill="#f0f0ff"/>
-    <rect x="-16" y="-23" width="32" height="46" rx="2" fill="#c8c8e6"/>
-  </g>
-  <text x="50" y="68" font-family="Arial Black,Arial" font-weight="900" font-size="52" fill="#7c5cfc" text-anchor="middle">T</text>
-</svg></div>
+    <div class="auth-logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#0f173c"/><g transform="translate(60,55) rotate(12)"><rect x="-20" y="-27" width="40" height="54" rx="3" fill="#d4af37"/></g><g transform="translate(45,50) rotate(-6)"><rect x="-20" y="-27" width="40" height="54" rx="3" fill="#f0f0ff"/><rect x="-16" y="-23" width="32" height="46" rx="2" fill="#c8c8e6"/></g><text x="50" y="68" font-family="Arial Black,Arial" font-weight="900" font-size="52" fill="#7c5cfc" text-anchor="middle">T</text></svg></div>
     <div class="auth-logo-text">TCGPotes</div>
   </div>
   <div class="loading-spinner"></div>
   <div class="loading-text" id="loadingText">Connexion…</div>
 </div>
 
-<!-- ══════════════════════════════════════
-     PAGE : CONNEXION / INSCRIPTION
-══════════════════════════════════════ -->
+<!-- ══════════ AUTH ══════════ -->
 <div class="page" id="page-auth">
   <div class="auth-screen">
-
-    <!-- Fond décoratif -->
     <div class="auth-bg-deco">
       <div class="auth-card-float auth-card-1"></div>
       <div class="auth-card-float auth-card-2"></div>
       <div class="auth-card-float auth-card-3"></div>
     </div>
-
-    <!-- Logo -->
     <div class="auth-hero">
-      <div class="auth-logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#0f173c"/>
-  <g transform="translate(60,55) rotate(12)">
-    <rect x="-20" y="-27" width="40" height="54" rx="3" fill="#d4af37"/>
-  </g>
-  <g transform="translate(45,50) rotate(-6)">
-    <rect x="-20" y="-27" width="40" height="54" rx="3" fill="#f0f0ff"/>
-    <rect x="-16" y="-23" width="32" height="46" rx="2" fill="#c8c8e6"/>
-  </g>
-  <text x="50" y="68" font-family="Arial Black,Arial" font-weight="900" font-size="52" fill="#7c5cfc" text-anchor="middle">T</text>
-</svg></div>
+      <div class="auth-logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#0f173c"/><g transform="translate(60,55) rotate(12)"><rect x="-20" y="-27" width="40" height="54" rx="3" fill="#d4af37"/></g><g transform="translate(45,50) rotate(-6)"><rect x="-20" y="-27" width="40" height="54" rx="3" fill="#f0f0ff"/><rect x="-16" y="-23" width="32" height="46" rx="2" fill="#c8c8e6"/></g><text x="50" y="68" font-family="Arial Black,Arial" font-weight="900" font-size="52" fill="#7c5cfc" text-anchor="middle">T</text></svg></div>
       <div class="auth-logo-text">TCGPotes</div>
       <div class="auth-logo-sub">Collecte · Échange · Affronte</div>
     </div>
-
-    <!-- Card de connexion -->
     <div class="auth-card" id="authCard">
-
-      <!-- Tabs -->
       <div class="auth-tabs">
-        <button class="auth-tab active" id="tabLogin"    onclick="switchAuthTab('login')">Connexion</button>
-        <button class="auth-tab"        id="tabRegister" onclick="switchAuthTab('register')">Inscription</button>
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Connexion</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Inscription</button>
         <div class="auth-tab-slider" id="authTabSlider"></div>
       </div>
-
-      <!-- LOGIN -->
       <div id="authLogin" class="auth-form">
-        <div class="auth-input-wrap">
-          <span class="auth-input-icon">✉️</span>
-          <input class="auth-input" id="loginEmail" type="email" placeholder="Adresse email" autocomplete="email">
-        </div>
-        <div class="auth-input-wrap">
-          <span class="auth-input-icon">🔒</span>
-          <input class="auth-input" id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password">
-        </div>
+        <div class="auth-input-wrap"><span class="auth-input-icon">✉️</span><input class="auth-input" id="loginEmail" type="email" placeholder="Adresse email" autocomplete="email"></div>
+        <div class="auth-input-wrap"><span class="auth-input-icon">🔒</span><input class="auth-input" id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password"></div>
         <div class="auth-error" id="authError"></div>
-        <button class="auth-btn-main" onclick="loginUser()">
-          <span>Jouer !</span>
-          <span class="auth-btn-arrow">→</span>
-        </button>
+        <button class="auth-btn-main" onclick="loginUser()"><span>Jouer !</span><span class="auth-btn-arrow">→</span></button>
         <div class="auth-divider"><span>ou</span></div>
         <button class="auth-btn-google" onclick="loginGoogle()">
           <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
           Continuer avec Google
         </button>
       </div>
-
-      <!-- REGISTER -->
       <div id="authRegister" class="auth-form" style="display:none">
-        <div class="auth-input-wrap">
-          <span class="auth-input-icon">👤</span>
-          <input class="auth-input" id="regPseudo" type="text" placeholder="Pseudo (2–20 caractères)" maxlength="20">
-        </div>
-        <div class="auth-input-wrap">
-          <span class="auth-input-icon">✉️</span>
-          <input class="auth-input" id="regEmail" type="email" placeholder="Adresse email" autocomplete="email">
-        </div>
-        <div class="auth-input-wrap">
-          <span class="auth-input-icon">🔒</span>
-          <input class="auth-input" id="regPassword" type="password" placeholder="Mot de passe (6+ caractères)" autocomplete="new-password">
-        </div>
+        <div class="auth-input-wrap"><span class="auth-input-icon">👤</span><input class="auth-input" id="regPseudo" type="text" placeholder="Pseudo (2–20 caractères)" maxlength="20"></div>
+        <div class="auth-input-wrap"><span class="auth-input-icon">✉️</span><input class="auth-input" id="regEmail" type="email" placeholder="Adresse email" autocomplete="email"></div>
+        <div class="auth-input-wrap"><span class="auth-input-icon">🔒</span><input class="auth-input" id="regPassword" type="password" placeholder="Mot de passe (6+ caractères)" autocomplete="new-password"></div>
         <div class="auth-error" id="regError"></div>
-        <button class="auth-btn-main" onclick="registerUser()">
-          <span>Créer mon compte</span>
-          <span class="auth-btn-arrow">✨</span>
-        </button>
+        <button class="auth-btn-main" onclick="registerUser()"><span>Créer mon compte</span><span class="auth-btn-arrow">✨</span></button>
         <div class="auth-divider"><span>ou</span></div>
         <button class="auth-btn-google" onclick="loginGoogle()">
           <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
           Continuer avec Google
         </button>
       </div>
-
     </div>
-
     <div class="auth-footer">✦ Tes cartes t'attendent ✦</div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     PAGE : ACCUEIL
-══════════════════════════════════════ -->
+<!-- ══════════ ACCUEIL ══════════ -->
 <div class="page" id="page-home">
   <div class="home-top">
     <div class="app-logo" onclick="showPage('profile-view')">
-      <span class="logo-icon">🃏</span>
+      <div class="app-logo-svg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#0f173c"/><g transform="translate(60,55) rotate(12)"><rect x="-20" y="-27" width="40" height="54" rx="3" fill="#d4af37"/></g><g transform="translate(45,50) rotate(-6)"><rect x="-20" y="-27" width="40" height="54" rx="3" fill="#f0f0ff"/><rect x="-16" y="-23" width="32" height="46" rx="2" fill="#c8c8e6"/></g><text x="50" y="68" font-family="Arial Black,Arial" font-weight="900" font-size="52" fill="#7c5cfc" text-anchor="middle">T</text></svg></div>
       <span class="logo-text">TCGPotes</span>
     </div>
     <div class="home-top-right">
@@ -145,17 +84,15 @@
         <span class="user-avatar" id="userAvatar">😀</span>
         <span class="user-pseudo" id="userPseudoChip">…</span>
       </div>
-      <button class="icon-btn" onclick="toggleDark()"  id="themeBtn">🌙</button>
+      <button class="icon-btn" onclick="toggleDark()" id="themeBtn">🌙</button>
       <button class="icon-btn" onclick="toggleMusic()" id="musicBtn">🔇</button>
     </div>
   </div>
-
   <div class="ext-selector-strip" onclick="showPage('extensions')">
     <span id="extStripIcon">🏫</span>
     <span id="extStripName">Lycée</span>
     <span class="ext-strip-arrow">›</span>
   </div>
-
   <div class="booster-area">
     <div class="booster-wrapper" id="boosterWrapper">
       <div class="booster-shine"></div>
@@ -165,115 +102,108 @@
         <div class="booster-ext-name" id="boosterExtName">Lycée</div>
       </div>
     </div>
-
-    <div class="charges-display">
-      <div class="charges-label">⚡ Recharges</div>
-      <div class="charges-pips" id="chargePips">
-        <div class="pip" id="pip0"></div>
-        <div class="pip" id="pip1"></div>
-        <div class="pip" id="pip2"></div>
-        <div class="pip" id="pip3"></div>
-      </div>
-      <div class="charges-timer" id="chargesTimer">Prochaine dans <span id="timerDisplay">--:--:--</span></div>
-    </div>
-
-    <button class="btn-open" id="btnOpen" onclick="openBooster()">🎁 Ouvrir le Booster !</button>
   </div>
+  <div class="charges-area">
+    <div class="charges-pips" id="chargesPips">
+      <div class="charge-pip" id="pip0"></div>
+      <div class="charge-pip" id="pip1"></div>
+    </div>
+    <div class="charges-timer" id="chargesTimer"><span>…</span></div>
+  </div>
+  <button class="btn-open" id="btnOpen" onclick="openBooster()" data-i18n="open_btn">🎁 Ouvrir le Booster !</button>
 </div>
 
-<!-- ══════════════════════════════════════
-     PAGE : COLLECTION
-══════════════════════════════════════ -->
+<!-- ══════════ COLLECTION ══════════ -->
 <div class="page" id="page-collection">
-  <div class="page-header-bar">
-    <div class="page-header-title">🃏 Collection</div>
+  <div class="page-header">
+    <div class="page-title" data-i18n="collection_title">🃏 Collection</div>
     <div class="collection-count"><span id="ownedCount">0</span>/<span id="totalCount">0</span></div>
   </div>
-  <div class="extension-label" id="collectionExtLabel">🏫 Extension Lycée</div>
+  <div class="collection-ext-label" id="collectionExtLabel">🏫 Extension Lycée</div>
   <div class="collection-grid" id="collectionGrid"></div>
 </div>
 
-<!-- ══════════════════════════════════════
-     PAGE : EXTENSIONS
-══════════════════════════════════════ -->
-<div class="page" id="page-extensions">
-  <div class="page-header-bar">
-    <div class="page-header-title">🌟 Extensions</div>
-    <button class="back-btn" onclick="showPage('home')">✕</button>
-  </div>
-  <div class="ext-list" id="extList"></div>
-</div>
-
-<!-- ══════════════════════════════════════
-     PAGE : PROFIL
-══════════════════════════════════════ -->
+<!-- ══════════ PROFIL ══════════ -->
 <div class="page" id="page-profile-view">
-  <div class="page-header-bar">
-    <div class="page-header-title">👤 Mon Profil</div>
-    <button class="back-btn" onclick="showPage('home')">✕</button>
+  <div class="page-header">
+    <div class="page-title" data-i18n="profile_title">👤 Mon Profil</div>
   </div>
-
-  <div class="profile-view-card">
-    <div class="profile-view-avatar" id="pvAvatar">😀</div>
-    <div class="profile-view-pseudo" id="pvPseudo">…</div>
-    <div class="profile-view-level"  id="pvLevel">Niv. 1 · Apprenti</div>
-    <div class="profile-view-code">
-      Code ami : <strong id="pvFriendCode">——</strong>
-      <button class="copy-code-btn" onclick="copyFriendCode()" title="Copier">📋</button>
+  <div class="profile-hero">
+    <div class="pv-avatar-wrap">
+      <div class="pv-avatar" id="pvAvatar">😀</div>
+    </div>
+    <div class="pv-pseudo" id="pvPseudo">…</div>
+    <div class="pv-level" id="pvLevel">Niv. 1 · Apprenti</div>
+    <div class="pv-code-row">
+      <span data-i18n="friend_code">Code ami</span>&nbsp;:&nbsp;
+      <strong id="pvFriendCode">…</strong>
+      <button class="copy-code-btn" onclick="copyFriendCode()" data-i18n="copy_code">📋</button>
     </div>
   </div>
 
   <div class="profile-stats-grid">
-    <div class="stat-card"><div class="stat-val" id="statCards">0</div><div class="stat-lbl">Cartes</div></div>
-    <div class="stat-card"><div class="stat-val" id="statUniq">0</div><div class="stat-lbl">Uniques</div></div>
-    <div class="stat-card"><div class="stat-val" id="statPacks">0</div><div class="stat-lbl">Boosters</div></div>
-    <div class="stat-card"><div class="stat-val" id="statFriends">0</div><div class="stat-lbl">Amis</div></div>
+    <div class="stat-box"><div class="stat-val" id="statCards">0</div><div class="stat-lbl" data-i18n="stat_cards">Cartes</div></div>
+    <div class="stat-box"><div class="stat-val" id="statUniq">0</div><div class="stat-lbl" data-i18n="stat_uniq">Uniques</div></div>
+    <div class="stat-box"><div class="stat-val" id="statPacks">0</div><div class="stat-lbl" data-i18n="stat_packs">Boosters</div></div>
+    <div class="stat-box"><div class="stat-val" id="statFriends">0</div><div class="stat-lbl" data-i18n="stat_friends">Amis</div></div>
   </div>
 
-  <div class="section-title">🎭 Avatar</div>
-  <div class="avatar-grid" id="avatarGrid"></div>
-
-  <div class="section-title">👫 Amis
-    <span class="online-legend">🟢 = en ligne récemment</span>
+  <!-- Échanges en attente -->
+  <div class="profile-section">
+    <div class="profile-section-title" data-i18n="trade_pending">Échanges en attente</div>
+    <div id="pendingTradesContainer"><div class="friends-empty" data-i18n="trade_no_pending">Aucun échange en attente</div></div>
   </div>
-  <div class="friends-add">
-    <input class="p-input" id="friendCodeInput" placeholder="Code ami (ex: ABC-1234)" maxlength="8" style="flex:1;margin-bottom:0">
-    <button class="btn-add-friend" onclick="addFriend()">+ Ajouter</button>
-  </div>
-  <div id="friendSearchResult" style="padding:0 14px;margin-bottom:8px"></div>
-  <div class="friends-list" id="friendsList"></div>
 
-  <div style="padding:8px 14px 4px">
-    <button class="btn-save btn-save-reset" onclick="confirmLogout()">🚪 Se déconnecter</button>
+  <!-- Avatar -->
+  <div class="profile-section">
+    <div class="profile-section-title" data-i18n="avatar_title">🎭 Avatar</div>
+    <div class="avatar-grid" id="avatarGrid"></div>
+  </div>
+
+  <!-- Amis -->
+  <div class="profile-section">
+    <div class="profile-section-title" data-i18n="friends_title">👫 Amis</div>
+    <div class="friend-add-row">
+      <input class="friend-input" id="friendCodeInput" type="text" placeholder="Code ami (ex: ABC-1234)" maxlength="8">
+      <button class="btn-add-friend" onclick="addFriend()" data-i18n="add_friend">+ Ajouter</button>
+    </div>
+    <div id="friendSearchResult"></div>
+    <div id="friendsList"></div>
+  </div>
+
+  <!-- Déconnexion -->
+  <div class="profile-section" style="padding-bottom:8px">
+    <button class="btn-logout" onclick="confirmLogout()" data-i18n="logout_btn">🚪 Se déconnecter</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     PAGE : RÉGLAGES
-══════════════════════════════════════ -->
+<!-- ══════════ RÉGLAGES ══════════ -->
 <div class="page" id="page-settings">
-  <div class="page-header-bar">
-    <div class="page-header-title">⚙️ Réglages</div>
+  <div class="page-header">
+    <div class="page-title" data-i18n="settings_title">⚙️ Réglages</div>
   </div>
 
   <div class="settings-section">
-    <div class="settings-section-title">🎨 Apparence</div>
+    <div class="settings-section-title" data-i18n="section_appearance">🎨 Apparence</div>
     <div class="settings-row">
       <div class="settings-row-left">
         <div class="settings-icon">🌙</div>
         <div class="settings-row-info">
-          <div class="settings-row-title">Mode sombre</div>
-          <div class="settings-row-sub">Thème nuit</div>
+          <div class="settings-row-title" data-i18n="dark_mode">Mode sombre</div>
+          <div class="settings-row-sub" data-i18n="dark_sub">Thème nuit</div>
         </div>
       </div>
       <label class="toggle"><input type="checkbox" id="darkToggle" onchange="setDark(this.checked)"><span class="toggle-slider"></span></label>
     </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title" data-i18n="section_lang">🌍 Langue</div>
     <div class="settings-row">
       <div class="settings-row-left">
         <div class="settings-icon">🌍</div>
         <div class="settings-row-info">
-          <div class="settings-row-title">Langue</div>
-          <div class="settings-row-sub" id="langSubLabel">Français</div>
+          <div class="settings-row-title" id="langSubLabel">Français</div>
         </div>
       </div>
       <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
@@ -286,13 +216,13 @@
   </div>
 
   <div class="settings-section">
-    <div class="settings-section-title">🔊 Audio</div>
+    <div class="settings-section-title" data-i18n="section_audio">🔊 Audio</div>
     <div class="settings-row">
       <div class="settings-row-left">
         <div class="settings-icon">🎵</div>
         <div class="settings-row-info">
-          <div class="settings-row-title">Volume musique</div>
-          <div class="settings-row-sub" id="volumeLabel">70%</div>
+          <div class="settings-row-title" data-i18n="music_volume">Volume musique</div>
+          <div class="settings-row-sub"><span id="volumeLabel">70%</span></div>
         </div>
       </div>
       <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70" style="--val:70%">
@@ -301,8 +231,8 @@
       <div class="settings-row-left">
         <div class="settings-icon">✨</div>
         <div class="settings-row-info">
-          <div class="settings-row-title">Animations</div>
-          <div class="settings-row-sub">Effets visuels</div>
+          <div class="settings-row-title" data-i18n="animations">Animations</div>
+          <div class="settings-row-sub" data-i18n="anims_sub">Effets visuels</div>
         </div>
       </div>
       <label class="toggle"><input type="checkbox" id="animToggle" checked onchange="saveSetting('animations',this.checked)"><span class="toggle-slider"></span></label>
@@ -310,46 +240,41 @@
   </div>
 
   <div class="settings-section">
-    <div class="settings-section-title">💾 Données</div>
-    <div class="settings-row">
-      <div class="settings-row-left">
-        <div class="settings-icon">📤</div>
-        <div class="settings-row-info">
-          <div class="settings-row-title">Exporter</div>
-          <div class="settings-row-sub">Copier la sauvegarde locale</div>
-        </div>
-      </div>
-      <button class="mini-btn" onclick="exportSave()">Copier</button>
-    </div>
-    <div class="settings-row">
-      <div class="settings-row-left">
-        <div class="settings-icon">📥</div>
-        <div class="settings-row-info">
-          <div class="settings-row-title">Importer</div>
-          <div class="settings-row-sub">Restaurer une sauvegarde</div>
-        </div>
-      </div>
-      <button class="mini-btn" onclick="showImportModal()">Coller</button>
-    </div>
+    <div class="settings-section-title" data-i18n="section_account">👤 Compte</div>
     <div class="settings-row">
       <div class="settings-row-left">
         <div class="settings-icon">🔔</div>
         <div class="settings-row-info">
-          <div class="settings-row-title">Alertes recharge</div>
-          <div class="settings-row-sub">Notifications navigateur</div>
+          <div class="settings-row-title" data-i18n="notif_title">Alertes recharge</div>
+          <div class="settings-row-sub" data-i18n="notif_sub">Notifications navigateur</div>
         </div>
       </div>
-      <button class="mini-btn" onclick="requestNotifPermission()">Activer</button>
+      <button class="mini-btn" onclick="requestNotifPermission()" data-i18n="enable">Activer</button>
     </div>
     <div style="padding:8px 0">
-      <button class="btn-save btn-save-reset" onclick="confirmReset()">🗑️ Réinitialiser la progression</button>
+      <button class="btn-save btn-save-reset" onclick="confirmReset()" data-i18n="reset_btn">🗑️ Réinitialiser la progression</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     NAVBAR
-══════════════════════════════════════ -->
+<!-- ══════════ GUIDE ══════════ -->
+<div class="page" id="page-guide">
+  <div class="page-header">
+    <div class="page-title" data-i18n="guide_title">📖 Guide & Règles</div>
+  </div>
+  <div class="guide-content" id="guideContent"></div>
+</div>
+
+<!-- ══════════ EXTENSIONS ══════════ -->
+<div class="page" id="page-extensions">
+  <div class="page-header">
+    <div class="page-title">📦 Extensions</div>
+    <button class="back-btn" onclick="showPage('home')">✕</button>
+  </div>
+  <div class="ext-list" id="extList"></div>
+</div>
+
+<!-- ══════════ NAVBAR ══════════ -->
 <nav class="navbar" id="mainNavbar" style="display:none">
   <div class="nav-item" onclick="showPage('home')" id="nav-home">
     <div class="nav-icon">🏠</div>
@@ -363,18 +288,19 @@
     <div class="nav-icon">👤</div>
     <div class="nav-label" data-i18n="nav_profile">Profil</div>
   </div>
+  <div class="nav-item" onclick="showPage('guide')" id="nav-guide">
+    <div class="nav-icon">📖</div>
+    <div class="nav-label" data-i18n="nav_guide">Guide</div>
+  </div>
   <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
     <div class="nav-icon">⚙️</div>
     <div class="nav-label" data-i18n="nav_settings">Réglages</div>
   </div>
 </nav>
 
-<!-- ══════════════════════════════════════
-     OVERLAY BOOSTER
-══════════════════════════════════════ -->
+<!-- ══════════ OVERLAY BOOSTER ══════════ -->
 <div class="overlay" id="boosterOverlay">
   <div class="particles" id="particles"></div>
-
   <div class="opening-stage" id="stageBooster">
     <div class="booster-tap-container" onclick="startReveal()">
       <div class="booster-placeholder booster-tap">
@@ -385,9 +311,8 @@
     </div>
     <p class="tap-hint" data-i18n="tap_open">👆 Appuie pour ouvrir !</p>
   </div>
-
   <div class="cards-reveal-stage" id="stageCards" style="display:none">
-    <div class="reveal-counter" id="revealCounter">Carte 1 / 5</div>
+    <div class="reveal-counter" id="revealCounter">Carte 1 / 3</div>
     <div class="revealed-card-wrap" id="revealedCardWrap">
       <div class="revealed-card" id="revealedCard"><div id="revealedCardContent"></div></div>
       <div class="card-info-reveal">
@@ -397,7 +322,6 @@
     </div>
     <button class="btn-next-card" id="btnNextCard" onclick="nextReveal()">Suivant ➡️</button>
   </div>
-
   <div class="recap-stage" id="stageRecap" style="display:none">
     <div class="recap-title">🎉 Ton Booster !</div>
     <div class="recap-grid" id="recapGrid"></div>
@@ -405,19 +329,17 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     MODALES
-══════════════════════════════════════ -->
+<!-- ══════════ MODALES ══════════ -->
 <!-- Carte -->
 <div class="card-modal-overlay" id="cardModal" onclick="closeCardModal()">
   <div class="card-modal-inner" onclick="event.stopPropagation()">
-    <div class="card-modal-img"   id="cardModalImg"></div>
+    <div class="card-modal-img" id="cardModalImg"></div>
     <div class="card-modal-info">
-      <div class="card-modal-name"  id="cardModalName"></div>
+      <div class="card-modal-name" id="cardModalName"></div>
       <div class="card-rarity-badge" id="cardModalRarity"></div>
       <div class="card-modal-count" id="cardModalCount"></div>
     </div>
-    <button class="btn-modal-close" onclick="closeCardModal()">✕ Fermer</button>
+    <button class="btn-modal-close" onclick="closeCardModal()" data-i18n="close">✕ Fermer</button>
   </div>
 </div>
 
@@ -425,22 +347,12 @@
 <div class="card-modal-overlay" id="resetModal">
   <div class="card-modal-inner" onclick="event.stopPropagation()">
     <div style="font-size:46px;text-align:center">⚠️</div>
-    <div class="card-modal-name">Réinitialiser ?</div>
+    <div class="card-modal-name" data-i18n="reset_confirm">Réinitialiser ?</div>
     <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px">
-      Toute ta progression (cartes, boosters) sera supprimée.<br><strong>Irréversible !</strong>
+      <span data-i18n="reset_warn">Toute ta progression sera supprimée.</span><br><strong data-i18n="irreversible">Irréversible !</strong>
     </p>
-    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doReset()">🗑️ Oui, tout effacer</button>
-    <button class="btn-modal-close" onclick="closeModal('resetModal')">✕ Annuler</button>
-  </div>
-</div>
-
-<!-- Import -->
-<div class="card-modal-overlay" id="importModal">
-  <div class="card-modal-inner" onclick="event.stopPropagation()">
-    <div class="card-modal-name">📥 Importer</div>
-    <textarea class="save-data-area" id="importDataArea" placeholder="Colle ton code ici…" style="width:100%;min-height:80px;margin:8px 0"></textarea>
-    <button class="btn-save btn-save-import" style="margin-bottom:8px" onclick="importSave()">✅ Importer</button>
-    <button class="btn-modal-close" onclick="closeModal('importModal')">✕ Annuler</button>
+    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doReset()" data-i18n="reset_do">🗑️ Oui, tout effacer</button>
+    <button class="btn-modal-close" onclick="closeModal('resetModal')" data-i18n="cancel">✕ Annuler</button>
   </div>
 </div>
 
@@ -448,21 +360,58 @@
 <div class="card-modal-overlay" id="logoutModal">
   <div class="card-modal-inner" onclick="event.stopPropagation()">
     <div style="font-size:46px;text-align:center">🚪</div>
-    <div class="card-modal-name">Se déconnecter ?</div>
-    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px">
-      Ta progression est sauvegardée dans le cloud ☁️
-    </p>
-    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doLogout()">🚪 Déconnecter</button>
-    <button class="btn-modal-close" onclick="closeModal('logoutModal')">✕ Annuler</button>
+    <div class="card-modal-name" data-i18n="logout_confirm">Se déconnecter ?</div>
+    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 16px" data-i18n="logout_cloud">Ta progression est sauvegardée dans le cloud ☁️</p>
+    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doLogout()" data-i18n="logout_do">🚪 Déconnecter</button>
+    <button class="btn-modal-close" onclick="closeModal('logoutModal')" data-i18n="cancel">✕ Annuler</button>
+  </div>
+</div>
+
+<!-- Trade Modal -->
+<div class="card-modal-overlay trade-modal-overlay" id="tradeModal">
+  <div class="trade-modal-inner" onclick="event.stopPropagation()">
+    <div class="trade-modal-header">
+      <div class="trade-modal-title" data-i18n="trade_title">🔄 Proposer un échange</div>
+      <div class="trade-friend-name" style="font-size:13px;color:var(--text-muted)"></div>
+      <button class="trade-close-btn" onclick="closeModal('tradeModal')">✕</button>
+    </div>
+    <div class="trade-sides">
+      <div class="trade-side">
+        <div class="trade-side-label" data-i18n="trade_give">Ta carte (à donner)</div>
+        <div class="trade-card-grid" id="tradeGiveGrid"></div>
+      </div>
+      <div class="trade-arrow">⇄</div>
+      <div class="trade-side">
+        <div class="trade-side-label" data-i18n="trade_receive">Carte souhaitée</div>
+        <div class="trade-card-grid" id="tradeWantGrid"></div>
+      </div>
+    </div>
+    <button class="auth-btn-main" id="tradeSendBtn" onclick="sendTrade()" disabled data-i18n="trade_send">Envoyer la proposition</button>
+  </div>
+</div>
+
+<!-- Friend Profile Modal -->
+<div class="card-modal-overlay" id="friendProfileModal">
+  <div class="card-modal-inner fp-modal" onclick="event.stopPropagation()">
+    <div class="fp-header">
+      <div class="fp-avatar">😀</div>
+      <div>
+        <div class="fp-pseudo">…</div>
+        <div class="fp-level">…</div>
+      </div>
+    </div>
+    <div class="fp-stats">
+      <div class="stat-box"><div class="stat-val fp-stat-cards">0</div><div class="stat-lbl" data-i18n="stat_cards">Cartes</div></div>
+      <div class="stat-box"><div class="stat-val fp-stat-uniq">0</div><div class="stat-lbl" data-i18n="stat_uniq">Uniques</div></div>
+    </div>
+    <div class="profile-section-title" data-i18n="friend_collection">Collection</div>
+    <div class="collection-grid fp-collection-grid" style="max-height:240px;overflow-y:auto"></div>
+    <button class="btn-modal-close" onclick="closeModal('friendProfileModal')" data-i18n="close">✕ Fermer</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- ══════════════════════════════════════
-     FIREBASE SDK  (version modulaire CDN)
-══════════════════════════════════════ -->
-<!-- Firebase SDK compat (fonctionne sans serveur) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="app.js"></script>
