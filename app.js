@@ -24,11 +24,26 @@ async function jbCreate(data){const r=await fetch(`${JB_BASE}/b`,{method:"POST",
 async function jbRead(binId){const r=await fetch(`${JB_BASE}/b/${binId}/latest`,{headers:{"X-Master-Key":JSONBIN_KEY}});const j=await r.json();return j.record||null;}
 async function jbUpdate(binId,data){await fetch(`${JB_BASE}/b/${binId}`,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":JSONBIN_KEY},body:JSON.stringify(data)});}
 
-const LS_INDEX='tcgp_index_bin';
-async function getIndexBin(){let id=localStorage.getItem(LS_INDEX);if(!id){id=await jbCreate({codes:{}});localStorage.setItem(LS_INDEX,id);}return id;}
-async function lookupCode(code){try{const idx=await jbRead(await getIndexBin());return idx?.codes?.[code]||null;}catch(e){return null;}}
-async function registerCode(code,uid,binId,pseudo,avatar){try{const idxId=await getIndexBin();const idx=await jbRead(idxId)||{codes:{}};if(!idx.codes)idx.codes={};idx.codes[code]={uid,binId,pseudo,avatar};await jbUpdate(idxId,idx);}catch(e){}}
-async function updateAvatarIndex(code,avatar){try{const idxId=await getIndexBin();const idx=await jbRead(idxId)||{codes:{}};if(idx.codes?.[code]){idx.codes[code].avatar=avatar;await jbUpdate(idxId,idx);}}catch(e){}}
+// ── INDEX GLOBAL PARTAGÉ (même ID pour tous les appareils) ──
+const GLOBAL_INDEX_BIN = '69b4217eaa77b81da9e05e2a';
+async function lookupCode(code){
+  try{const idx=await jbRead(GLOBAL_INDEX_BIN);return idx?.codes?.[code]||null;}
+  catch(e){console.warn('lookupCode err',e);return null;}
+}
+async function registerCode(code,uid,binId,pseudo,avatar){
+  try{
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    if(!idx.codes)idx.codes={};
+    idx.codes[code]={uid,binId,pseudo,avatar};
+    await jbUpdate(GLOBAL_INDEX_BIN,idx);
+  }catch(e){console.warn('registerCode err',e);}
+}
+async function updateAvatarIndex(code,avatar){
+  try{
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    if(idx.codes?.[code]){idx.codes[code].avatar=avatar;await jbUpdate(GLOBAL_INDEX_BIN,idx);}
+  }catch(e){}
+}
 
 // ══════════════════════════════════════════════════════════
 //  DONNÉES JEU
@@ -352,7 +367,7 @@ async function registerUser(){
   if(!email||pass.length<6){setAuthError('regError','⚠️ Email valide + 6+ caractères');return;}
   setLoading('Vérification…');
   try{
-    const idxId=await getIndexBin();const idx=await jbRead(idxId)||{codes:{}};
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
     const taken=Object.values(idx.codes||{}).find(v=>v.pseudo?.toLowerCase()===pseudo.toLowerCase());
     if(taken){hideLoading();setAuthError('regError','❌ Pseudo déjà pris !');return;}
     setLoading('Création du compte…');const cred=await auth.createUserWithEmailAndPassword(email,pass);
