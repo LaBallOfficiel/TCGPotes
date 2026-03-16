@@ -318,22 +318,25 @@ async function saveProfileRemote(){
   }catch(e){console.warn('save err',e);}
 }
 async function loadProfileRemote(uid){
-  // 1. Chercher le binId en localStorage d'abord (rapide)
-  let binId=localStorage.getItem(lsBin(uid));
-
-  // 2. Si pas en localStorage, chercher dans l'index global (nouvel appareil)
-  if(!binId){
-    try{
-      setLoading('Synchronisation du compte…');
-      const idx=await jbRead(GLOBAL_INDEX_BIN);
-      if(idx&&idx.codes){
-        const entry=Object.values(idx.codes).find(v=>v.uid===uid);
-        if(entry){binId=entry.binId;localStorage.setItem(lsBin(uid),binId);}
+  // 1. Chercher le binId dans l'index global (source de vérité)
+  let binId=null;
+  try{
+    const idx=await jbRead(GLOBAL_INDEX_BIN);
+    if(idx&&idx.codes){
+      const entry=Object.values(idx.codes).find(v=>v.uid===uid);
+      if(entry){
+        binId=entry.binId;
+        localStorage.setItem(lsBin(uid),binId);
+        console.log('[sync] binId trouvé dans index global:',binId);
       }
-    }catch(e){console.warn('index lookup err',e);}
+    }
+  }catch(e){
+    console.warn('[sync] index lookup err',e);
+    // Fallback localStorage si index inaccessible
+    binId=localStorage.getItem(lsBin(uid));
   }
 
-  if(!binId)return null;
+  if(!binId){console.warn('[sync] aucun binId pour uid',uid);return null;}
   try{
     const data=await jbRead(binId);
     if(data){
@@ -364,18 +367,27 @@ async function createNewProfile(uid,pseudo){
 auth.onAuthStateChanged(async user=>{
   hideLoading();
   if(user){
-    currentUser=user;setLoading('Chargement du profil…');
-    const cached=loadProfileLS();
-    if(cached&&cached.uid===user.uid){
-      profile=cached;gameState=loadGameLS()||defaultGame();
-      if(!gameState.pendingTrades)gameState.pendingTrades=[];
-      hideLoading();enterApp();
-      loadProfileRemote(user.uid).then(p=>{if(p)updateUI();});
+    currentUser=user;
+    setLoading('Synchronisation…');
+
+    // Toujours charger depuis le cloud en priorité (synchro multi-appareils)
+    const remote=await loadProfileRemote(user.uid);
+    hideLoading();
+
+    if(remote){
+      enterApp();
+    } else if(user.providerData[0]?.providerId==='google.com'){
+      showPseudoPrompt(user);
     } else {
-      const remote=await loadProfileRemote(user.uid);hideLoading();
-      if(remote){enterApp();}
-      else if(user.providerData[0]?.providerId==='google.com'){showPseudoPrompt(user);}
-      else{showAuthPage();}
+      // Nouveau compte email — vérifier si profil local de secours
+      const cached=loadProfileLS();
+      if(cached&&cached.uid===user.uid){
+        profile=cached;gameState=loadGameLS()||defaultGame();
+        if(!gameState.pendingTrades)gameState.pendingTrades=[];
+        enterApp();
+      } else {
+        showAuthPage();
+      }
     }
   } else {currentUser=null;profile=null;gameState=null;showAuthPage();}
 });
@@ -740,7 +752,15 @@ function showPage(name){
   const nav=document.getElementById('nav-'+name);if(nav)nav.classList.add('active');
   if(name==='collection')renderCollection();
   if(name==='extensions')renderExtensions();
-  if(name==='profile-view'){updateProfileView();renderPendingTrades();}
+  if(name==='profile-view'){
+    updateProfileView();renderPendingTrades();
+    // Resync cloud quand on ouvre le profil
+    if(currentUser){
+      loadProfileRemote(currentUser.uid).then(p=>{
+        if(p){updateProfileView();renderPendingTrades();}
+      });
+    }
+  }
   if(name==='guide')renderGuide();
 }
 
