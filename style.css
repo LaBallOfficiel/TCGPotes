@@ -1446,3 +1446,30 @@ body {
   color:#fff; font-size:12px; font-weight:800; cursor:pointer;
   white-space:nowrap;
 }
+
+/* ── FRIEND REQUESTS ── */
+.friend-requests-title {
+  font-family:'Fredoka One',cursive; font-size:15px; color:var(--text);
+  margin-bottom:8px; display:flex; align-items:center; gap:6px;
+}
+.friend-request-item {
+  display:flex; align-items:center; gap:8px;
+  background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(244,114,182,0.08));
+  border:1.5px solid rgba(139,92,246,0.3);
+  border-radius:14px; padding:10px 12px; margin-bottom:8px;
+  animation:badgePop 0.3s ease;
+}
+.btn-req-accept {
+  background:linear-gradient(135deg,var(--green),#16a34a);
+  border:none; border-radius:10px; padding:8px 12px;
+  font-size:16px; cursor:pointer; flex-shrink:0;
+  transition:transform 0.15s;
+}
+.btn-req-accept:active { transform:scale(0.9); }
+.btn-req-decline {
+  background:rgba(239,68,68,0.15); border:1.5px solid var(--red);
+  border-radius:10px; padding:8px 12px;
+  font-size:16px; cursor:pointer; flex-shrink:0;
+  transition:transform 0.15s;
+}
+.btn-req-decline:active { transform:scale(0.9); }

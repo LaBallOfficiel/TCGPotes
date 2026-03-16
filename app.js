@@ -80,6 +80,10 @@ const I18N={
       searching:'🔍 Recherche…',not_found:'❌ Code introuvable',already_friend:'👫 Déjà ami !',
       own_code:'😅 C\'est ton propre code !',friend_added:'👫 {name} ajouté !',
       friend_removed:'❌ Ami retiré',remove_friend:'✕',
+      friend_req_sent:'📨 Demande envoyée à {name} !',friend_req_pending:'En attente…',
+      friend_requests:'Demandes reçues',no_requests:'Aucune demande',
+      req_accept:'✅',req_decline:'❌',friend_req_accepted:'👫 {name} accepté !',
+      friend_req_declined:'Demande refusée',already_sent:'📨 Demande déjà envoyée',
       view_profile:'👁 Profil',propose_trade:'🔄 Échange',
       avatar_title:'🎭 Avatar',logout_btn:'🚪 Se déconnecter',
       stat_cards:'Cartes',stat_uniq:'Uniques',stat_packs:'Boosters',stat_friends:'Amis',
@@ -120,6 +124,10 @@ const I18N={
       searching:'🔍 Searching…',not_found:'❌ Code not found',already_friend:'👫 Already friends!',
       own_code:'😅 That\'s your own code!',friend_added:'👫 {name} added!',
       friend_removed:'❌ Friend removed',remove_friend:'✕',
+      friend_req_sent:'📨 Request sent to {name}!',friend_req_pending:'Pending…',
+      friend_requests:'Friend requests',no_requests:'No requests',
+      req_accept:'✅',req_decline:'❌',friend_req_accepted:'👫 {name} accepted!',
+      friend_req_declined:'Request declined',already_sent:'📨 Request already sent',
       view_profile:'👁 Profile',propose_trade:'🔄 Trade',
       avatar_title:'🎭 Avatar',logout_btn:'🚪 Log out',
       stat_cards:'Cards',stat_uniq:'Unique',stat_packs:'Packs',stat_friends:'Friends',
@@ -157,7 +165,12 @@ const I18N={
       friends_title:'👫 Amigos',no_friends:'Sin amigos 😢\n¡Comparte tu código!',
       friend_placeholder:'Código amigo',add_friend:'+ Añadir',searching:'🔍 Buscando…',not_found:'❌ Código no encontrado',
       already_friend:'👫 ¡Ya es amigo!',own_code:'😅 ¡Es tu propio código!',friend_added:'👫 {name} añadido!',
-      friend_removed:'❌ Amigo eliminado',remove_friend:'✕',view_profile:'👁 Perfil',propose_trade:'🔄 Intercambio',
+      friend_removed:'❌ Amigo eliminado',remove_friend:'✕',
+      friend_req_sent:'📨 ¡Solicitud enviada a {name}!',friend_req_pending:'Pendiente…',
+      friend_requests:'Solicitudes',no_requests:'Sin solicitudes',
+      req_accept:'✅',req_decline:'❌',friend_req_accepted:'👫 ¡{name} aceptado!',
+      friend_req_declined:'Solicitud rechazada',already_sent:'📨 Solicitud ya enviada',
+      view_profile:'👁 Perfil',propose_trade:'🔄 Intercambio',
       avatar_title:'🎭 Avatar',logout_btn:'🚪 Cerrar sesión',
       stat_cards:'Cartas',stat_uniq:'Únicas',stat_packs:'Sobres',stat_friends:'Amigos',
       settings_title:'⚙️ Ajustes',section_appearance:'🎨 Apariencia',dark_mode:'Modo oscuro',dark_sub:'Tema noche',
@@ -194,7 +207,12 @@ const I18N={
       friends_title:'👫 Freunde',no_friends:'Noch keine Freunde 😢',
       friend_placeholder:'Freundescode (z.B. ABC-1234)',add_friend:'+ Hinzufügen',searching:'🔍 Suche…',not_found:'❌ Code nicht gefunden',
       already_friend:'👫 Bereits befreundet!',own_code:'😅 Das ist dein eigener Code!',friend_added:'👫 {name} hinzugefügt!',
-      friend_removed:'❌ Freund entfernt',remove_friend:'✕',view_profile:'👁 Profil',propose_trade:'🔄 Tausch',
+      friend_removed:'❌ Freund entfernt',remove_friend:'✕',
+      friend_req_sent:'📨 Anfrage an {name} gesendet!',friend_req_pending:'Ausstehend…',
+      friend_requests:'Freundschaftsanfragen',no_requests:'Keine Anfragen',
+      req_accept:'✅',req_decline:'❌',friend_req_accepted:'👫 {name} angenommen!',
+      friend_req_declined:'Anfrage abgelehnt',already_sent:'📨 Anfrage bereits gesendet',
+      view_profile:'👁 Profil',propose_trade:'🔄 Tausch',
       avatar_title:'🎭 Avatar',logout_btn:'🚪 Abmelden',
       stat_cards:'Karten',stat_uniq:'Einzigartig',stat_packs:'Booster',stat_friends:'Freunde',
       settings_title:'⚙️ Einstellungen',section_appearance:'🎨 Aussehen',dark_mode:'Dunkler Modus',dark_sub:'Nacht-Thema',
@@ -260,7 +278,7 @@ function saveGame(){if(!gameState||!currentUser)return;try{localStorage.setItem(
 function loadGameLS(){try{const s=localStorage.getItem(lsGame(currentUser?.uid));return s?JSON.parse(s):null;}catch(e){return null;}}
 function saveProfileLS(){try{localStorage.setItem(LS_PROFILE,JSON.stringify(profile));}catch(e){}}
 function loadProfileLS(){try{const s=localStorage.getItem(LS_PROFILE);return s?JSON.parse(s):null;}catch(e){return null;}}
-function defaultGame(){return{charges:MAX_CHARGES,lastChargeTime:Date.now(),currentExt:'Lycee',collection:{},pendingTrades:[]};}
+function defaultGame(){return{charges:MAX_CHARGES,lastChargeTime:Date.now(),currentExt:'Lycee',collection:{},pendingTrades:[],friendRequests:[]};}
 
 function genFriendCode(uid){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';let h=0;for(const c of uid)h=(h*31+c.charCodeAt(0))&0x7fffffff;let code='',tmp=h;for(let i=0;i<3;i++){code+=L[tmp%L.length];tmp=Math.floor(tmp/L.length);}return code+'-'+(1000+(h%9000));}
 function getLevel(n){if(n>=200)return{num:10,label:'Maître'};if(n>=100)return{num:7,label:'Expert'};if(n>=50)return{num:5,label:'Chasseur'};if(n>=20)return{num:3,label:'Collectionneur'};if(n>=5)return{num:2,label:'Débutant'};return{num:1,label:'Apprenti'};}
@@ -303,6 +321,7 @@ async function loadProfileRemote(uid){
     profile=prof;
     gameState=gs||loadGameLS()||defaultGame();
     if(!gameState.pendingTrades)gameState.pendingTrades=[];
+    if(!gameState.friendRequests)gameState.friendRequests=[];
     if(!gameState.collection)gameState.collection={};
     saveProfileLS();saveGame();
     return profile;
@@ -620,6 +639,7 @@ function renderPendingTrades(){
   const container=document.getElementById('pendingTradesContainer');
   if(!container)return;
   const trades=gameState?.pendingTrades||[];
+  renderFriendRequests();
   const titleEl=container.previousElementSibling;
   if(titleEl&&titleEl.dataset.i18n==='trade_pending')titleEl.textContent=t('trade_pending');
   if(!trades.length){
@@ -655,7 +675,7 @@ function renderPendingTrades(){
   });
 }
 
-// ── AMIS ──────────────────────────────────────────────────
+// ── AMIS — Système de demandes ───────────────────────────
 async function addFriend(){
   const input=document.getElementById('friendCodeInput');
   const code=input.value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
@@ -667,7 +687,6 @@ async function addFriend(){
   resultEl.innerHTML=`<div class="friends-empty">${t('searching')}</div>`;
   const found=await lookupCode(code);
   if(!found){resultEl.innerHTML=`<div class="friends-empty">${t('not_found')}</div>`;return;}
-  // Stocker sans passer d'emoji dans onclick
   _pendingFriend={uid:found.uid,pseudo:found.pseudo,avatar:found.avatar||'😀',friendCode:code,binId:found.binId};
   resultEl.innerHTML=`<div class="friend-row">
     <div class="friend-avatar">${found.avatar||'😀'}</div>
@@ -675,37 +694,103 @@ async function addFriend(){
       <div class="friend-pseudo">${found.pseudo}</div>
       <div class="friend-level">${code}</div>
     </div>
-    <button class="btn-add-friend" onclick="confirmAddFriend()">+ Ajouter</button>
+    <button class="btn-add-friend" onclick="sendFriendRequest()">📨 Demander</button>
   </div>`;
 }
-async function confirmAddFriend(){
+
+async function sendFriendRequest(){
   if(!_pendingFriend)return;
   const {uid,pseudo,avatar,friendCode,binId}=_pendingFriend;
   _pendingFriend=null;
   document.getElementById('friendSearchResult').innerHTML='';
   document.getElementById('friendCodeInput').value='';
-  if(!profile.friends)profile.friends=[];
-  if(profile.friends.find(f=>f.uid===uid)){showToast(t('already_friend'));return;}
-  profile.friends.push({uid,pseudo,avatar,friendCode,binId});
-  saveProfile();renderFriends();updateProfileStats();
-  showToast(t('friend_added',{name:pseudo}));
-  // Ajout réciproque : ne fusionner QUE friends, pas gameState
+  if((profile.friends||[]).find(f=>f.uid===uid)){showToast(t('already_friend'));return;}
+  setLoading('Envoi de la demande…');
   try{
     const theirData=await jbRead(binId);
+    if(!theirData){hideLoading();showToast('❌ Impossible de joindre ce joueur');return;}
+    if(!theirData.gameState)theirData.gameState=defaultGame();
+    if(!theirData.gameState.friendRequests)theirData.gameState.friendRequests=[];
+    // Vérifier si demande déjà envoyée
+    if(theirData.gameState.friendRequests.find(r=>r.fromUid===currentUser.uid)){
+      hideLoading();showToast(t('already_sent'));return;
+    }
+    // Vérifier si déjà amis de leur côté
+    if((theirData.friends||[]).find(f=>f.uid===currentUser.uid)){
+      hideLoading();showToast(t('already_friend'));return;
+    }
+    theirData.gameState.friendRequests.push({
+      id:Date.now()+'_'+Math.random().toString(36).slice(2),
+      fromUid:currentUser.uid,
+      fromPseudo:profile.pseudo,
+      fromAvatar:profile.avatar,
+      fromFriendCode:profile.friendCode,
+      fromBinId:profile.binId
+    });
+    await jbUpdate(binId,theirData);
+    hideLoading();
+    showToast(t('friend_req_sent',{name:pseudo}));
+  }catch(e){hideLoading();showToast('❌ Erreur envoi demande');console.warn(e);}
+}
+
+async function acceptFriendRequest(reqId){
+  const req=gameState.friendRequests?.find(r=>r.id===reqId);
+  if(!req)return;
+  setLoading('Acceptation…');
+  // Ajouter localement
+  if(!profile.friends)profile.friends=[];
+  if(!profile.friends.find(f=>f.uid===req.fromUid)){
+    profile.friends.push({uid:req.fromUid,pseudo:req.fromPseudo,avatar:req.fromAvatar,friendCode:req.fromFriendCode,binId:req.fromBinId});
+  }
+  gameState.friendRequests=gameState.friendRequests.filter(r=>r.id!==reqId);
+  saveProfile();
+  renderFriendRequests();renderFriends();updateProfileStats();
+  // Ajouter réciproquement chez l'expéditeur
+  try{
+    const theirData=await jbRead(req.fromBinId);
     if(theirData){
       if(!theirData.friends)theirData.friends=[];
       if(!theirData.friends.find(f=>f.uid===currentUser.uid)){
         theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode,binId:profile.binId});
-        // FIX: ne mettre à jour que friends dans leur bin, pas gameState
-        await jbUpdate(binId,{...theirData,friends:theirData.friends});
+        await jbUpdate(req.fromBinId,{...theirData,friends:theirData.friends});
       }
     }
-  }catch(e){console.warn('reciprocal friend err',e);}
+  }catch(e){console.warn('accept reciprocal err',e);}
+  hideLoading();
+  showToast(t('friend_req_accepted',{name:req.fromPseudo}));
 }
+
+function declineFriendRequest(reqId){
+  gameState.friendRequests=gameState.friendRequests.filter(r=>r.id!==reqId);
+  saveProfile();renderFriendRequests();showToast(t('friend_req_declined'));
+}
+
+function renderFriendRequests(){
+  const container=document.getElementById('friendRequestsList');
+  if(!container)return;
+  const requests=gameState?.friendRequests||[];
+  const section=document.getElementById('friendRequestsSection');
+  if(section)section.style.display=requests.length?'block':'none';
+  container.innerHTML='';
+  requests.forEach(req=>{
+    const div=document.createElement('div');div.className='friend-request-item';
+    div.innerHTML=`
+      <div class="friend-avatar">${req.fromAvatar||'😀'}</div>
+      <div class="friend-info">
+        <div class="friend-pseudo">${req.fromPseudo}</div>
+        <div class="friend-level">${req.fromFriendCode}</div>
+      </div>
+      <button class="btn-req-accept" onclick="acceptFriendRequest('${req.id}')" title="${t('req_accept')}">✅</button>
+      <button class="btn-req-decline" onclick="declineFriendRequest('${req.id}')" title="${t('req_decline')}">❌</button>`;
+    container.appendChild(div);
+  });
+}
+
 function removeFriend(uid){
   profile.friends=(profile.friends||[]).filter(f=>f.uid!==uid);
   saveProfile();renderFriends();updateProfileStats();showToast(t('friend_removed'));
 }
+
 function renderFriends(){
   const list=document.getElementById('friendsList');
   if(!list)return;
@@ -1295,7 +1380,7 @@ Object.assign(window,{
   confirmLogout,doLogout,closeModal,closeCardModal,
   showPage,toggleDark,setDark,setLang,toggleMusic,saveSetting,
   openBooster,startReveal,nextReveal,collectAll,openCardModal,
-  addFriend,confirmAddFriend,removeFriend,
+  addFriend,sendFriendRequest,acceptFriendRequest,declineFriendRequest,removeFriend,
   openFriendProfile,openTradeModal,selectTradeCard,sendTrade,acceptTrade,declineTrade,
   copyFriendCode,selectAvatar,
   confirmReset,doReset,requestNotifPermission,

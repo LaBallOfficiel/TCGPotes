@@ -163,6 +163,13 @@
   <!-- Amis -->
   <div class="profile-section">
     <div class="profile-section-title" data-i18n="friends_title">👫 Amis</div>
+    <!-- Demandes reçues -->
+    <div id="friendRequestsSection" style="display:none;margin-bottom:12px">
+      <div class="friend-requests-title">📬 Demandes reçues</div>
+      <div id="friendRequestsList"></div>
+    </div>
+
+    <!-- Ajouter un ami -->
     <div class="friend-add-row">
       <input class="friend-input" id="friendCodeInput" type="text" placeholder="Code ami (ex: ABC-1234)" maxlength="8">
       <button class="btn-add-friend" onclick="addFriend()" data-i18n="add_friend">+ Ajouter</button>
