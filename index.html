@@ -4,7 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TCGPotes</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20rx%3D'20'%20fill%3D'%230f173c'%2F%3E%3Cg%20transform%3D'translate(60%2C55)%20rotate(12)'%3E%3Crect%20x%3D'-20'%20y%3D'-27'%20width%3D'40'%20height%3D'54'%20rx%3D'3'%20fill%3D'%23d4af37'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(45%2C50)%20rotate(-6)'%3E%3Crect%20x%3D'-20'%20y%3D'-27'%20width%3D'40'%20height%3D'54'%20rx%3D'3'%20fill%3D'%23f0f0ff'%2F%3E%3Crect%20x%3D'-16'%20y%3D'-23'%20width%3D'32'%20height%3D'46'%20rx%3D'2'%20fill%3D'%23c8c8e6'%2F%3E%3C%2Fg%3E%3Ctext%20x%3D'50'%20y%3D'68'%20font-family%3D'Arial%20Black%2CArial'%20font-weight%3D'900'%20font-size%3D'52'%20fill%3D'%237c5cfc'%20text-anchor%3D'middle'%3ET%3C%2Ftext%3E%3C%2Fsvg%3E">
+
+  <!-- ═══ PWA ═══ -->
+  <link rel="manifest" href="/TCGPotes/manifest.json">
+  <meta name="theme-color" content="#7c5cfc">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="TCGPotes">
+
+  <!-- iOS Safari PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TCGPotes">
+  <link rel="apple-touch-icon" href="/TCGPotes/icons/icon-192.png">
+  <link rel="apple-touch-startup-image" href="/TCGPotes/icons/icon-512.png">
+
+  <!-- SEO / partage -->
+  <meta name="description" content="Collecte, échange et affronte tes amis avec des cartes TCG !">
+  <meta name="color-scheme" content="dark light">
+  <meta property="og:title" content="TCGPotes">
+  <meta property="og:description" content="Collecte, échange et affronte tes amis avec des cartes TCG !">
+  <meta property="og:image" content="/TCGPotes/icons/icon-512.png">
+  <meta property="og:type" content="website">
+
+  <!-- Icônes -->
+  <link rel="icon" sizes="192x192" href="/TCGPotes/icons/icon-192.png">
+  <link rel="icon" sizes="512x512" href="/TCGPotes/icons/icon-512.png">
+  <link rel="shortcut icon" href="/TCGPotes/icons/icon-192.png">
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -456,5 +483,30 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="app.js"></script>
+
+<!-- ═══ Service Worker ═══ -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/TCGPotes/service-worker.js', { scope: '/TCGPotes/' })
+        .then(reg => {
+          console.log('[PWA] Service Worker enregistré :', reg.scope);
+          // Vérifier si une nouvelle version est disponible
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // Nouvelle version dispo — notifier l'utilisateur
+                if (typeof showToast === 'function') {
+                  showToast('🔄 Mise à jour disponible ! Recharge la page.');
+                }
+              }
+            });
+          });
+        })
+        .catch(err => console.warn('[PWA] SW non enregistré :', err));
+    });
+  }
+</script>
 </body>
 </html>
