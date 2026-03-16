@@ -285,6 +285,7 @@ let appCfg={lang:'fr',dark:false,volume:70,animations:true};
 let currentUser=null,profile=null,gameState=null,currentPage='home';
 let pendingCards=[],revealIndex=0,toastTimeout=null,musicPlaying=false;
 let tradeData={giving:null,wanting:null,friendUid:null,friendBinId:null};
+let _handlingAuth=false; // évite double déclenchement onAuthStateChanged
 
 const LS_CFG='tcgp_cfg',LS_PROFILE='tcgp_profile';
 const lsGame=uid=>`tcgp_game_${uid}`,lsBin=uid=>`tcgp_bin_${uid}`;
@@ -365,29 +366,34 @@ async function createNewProfile(uid,pseudo){
 //  AUTH
 // ══════════════════════════════════════════════════════════
 auth.onAuthStateChanged(async user=>{
+  if(_handlingAuth) return; // inscription en cours, on ignore
   hideLoading();
   if(user){
     currentUser=user;
-    setLoading('Synchronisation…');
+    setLoading('Chargement…');
 
-    // Toujours charger depuis le cloud en priorité (synchro multi-appareils)
+    // 1. Cache local rapide (même appareil)
+    const cached=loadProfileLS();
+    if(cached&&cached.uid===user.uid){
+      profile=cached;
+      gameState=loadGameLS()||defaultGame();
+      if(!gameState.pendingTrades)gameState.pendingTrades=[];
+      hideLoading();
+      enterApp();
+      // Sync cloud en arrière-plan silencieux
+      loadProfileRemote(user.uid).then(p=>{if(p)updateUI();}).catch(()=>{});
+      return;
+    }
+
+    // 2. Pas de cache — chercher dans le cloud (nouvel appareil)
     const remote=await loadProfileRemote(user.uid);
     hideLoading();
-
     if(remote){
       enterApp();
     } else if(user.providerData[0]?.providerId==='google.com'){
       showPseudoPrompt(user);
     } else {
-      // Nouveau compte email — vérifier si profil local de secours
-      const cached=loadProfileLS();
-      if(cached&&cached.uid===user.uid){
-        profile=cached;gameState=loadGameLS()||defaultGame();
-        if(!gameState.pendingTrades)gameState.pendingTrades=[];
-        enterApp();
-      } else {
-        showAuthPage();
-      }
+      showAuthPage();
     }
   } else {currentUser=null;profile=null;gameState=null;showAuthPage();}
 });
@@ -405,13 +411,20 @@ async function registerUser(){
   if(pseudo.length<2||pseudo.length>20){setAuthError('regError','⚠️ Pseudo : 2 à 20 caractères');return;}
   if(!email||pass.length<6){setAuthError('regError','⚠️ Email valide + 6+ caractères');return;}
   setLoading('Vérification…');
+  _handlingAuth=true; // bloquer onAuthStateChanged pendant la création
   try{
     const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
     const taken=Object.values(idx.codes||{}).find(v=>v.pseudo?.toLowerCase()===pseudo.toLowerCase());
-    if(taken){hideLoading();setAuthError('regError','❌ Pseudo déjà pris !');return;}
-    setLoading('Création du compte…');const cred=await auth.createUserWithEmailAndPassword(email,pass);
+    if(taken){_handlingAuth=false;hideLoading();setAuthError('regError','❌ Pseudo déjà pris !');return;}
+    setLoading('Création du compte…');
+    const cred=await auth.createUserWithEmailAndPassword(email,pass);
+    currentUser=cred.user;
+    setLoading('Création du profil…');
     await createNewProfile(cred.user.uid,pseudo);
-  }catch(e){hideLoading();setAuthError('regError',firebaseErrMsg(e.code));}
+    _handlingAuth=false;
+    hideLoading();
+    enterApp(); // → jeu directement !
+  }catch(e){_handlingAuth=false;hideLoading();setAuthError('regError',firebaseErrMsg(e.code));}
 }
 async function loginGoogle(){
   try{
