@@ -823,6 +823,7 @@ function showPage(name){
   if(name==='guide')renderGuide();
   if(name==='profile-view'){
     updateProfileView();renderPendingTrades();
+    loadSuggestedFriends();
     // Resync cloud silencieuse quand on ouvre le profil
     if(currentUser){
       loadProfileRemote(currentUser.uid)
@@ -1152,6 +1153,142 @@ function initSettingsUI(){
 function init(){loadCfg();applyTheme();initBg();applyI18n();setLoading('Connexion…');checkRedirectResult();}
 document.addEventListener('DOMContentLoaded',init);
 
+
+// ── RENOMMAGE ─────────────────────────────────────────────
+function openRenameModal(){
+  const input=document.getElementById('renameInput');
+  if(input)input.value=profile.pseudo;
+  document.getElementById('renameError').textContent='';
+  document.getElementById('renameModal').classList.add('active');
+  setTimeout(()=>input?.focus(),200);
+}
+async function doRename(){
+  const newPseudo=document.getElementById('renameInput').value.trim();
+  const errEl=document.getElementById('renameError');
+  if(newPseudo.length<2||newPseudo.length>20){errEl.textContent='⚠️ 2 à 20 caractères';return;}
+  if(newPseudo===profile.pseudo){closeModal('renameModal');return;}
+  errEl.textContent='';
+  setLoading('Vérification…');
+  try{
+    // Vérifier unicité
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    const taken=Object.values(idx.codes||{}).find(v=>v.pseudo?.toLowerCase()===newPseudo.toLowerCase()&&v.uid!==currentUser.uid);
+    if(taken){hideLoading();errEl.textContent='❌ Pseudo déjà pris !';return;}
+    // Mettre à jour le profil
+    const oldPseudo=profile.pseudo;
+    profile.pseudo=newPseudo;
+    // Mettre à jour l'index global
+    if(idx.codes?.[profile.friendCode]){
+      idx.codes[profile.friendCode].pseudo=newPseudo;
+      await jbUpdate(GLOBAL_INDEX_BIN,idx);
+    }
+    saveProfile();
+    updateProfileView();
+    hideLoading();
+    closeModal('renameModal');
+    showToast('✅ Pseudo changé !');
+    console.log('Pseudo changé:',oldPseudo,'→',newPseudo);
+  }catch(e){hideLoading();errEl.textContent='❌ Erreur, réessaie';}
+}
+
+// ── SUPPRESSION DE COMPTE ─────────────────────────────────
+function confirmDeleteAccount(){
+  document.getElementById('deleteConfirmInput').value='';
+  document.getElementById('deleteError').textContent='';
+  document.getElementById('deleteAccountModal').classList.add('active');
+}
+async function doDeleteAccount(){
+  const pass=document.getElementById('deleteConfirmInput').value;
+  const errEl=document.getElementById('deleteError');
+  if(!pass){errEl.textContent='⚠️ Entre ton mot de passe';return;}
+  setLoading('Suppression…');
+  try{
+    // Ré-authentifier pour confirmer
+    const credential=firebase.auth.EmailAuthProvider.credential(currentUser.email,pass);
+    await currentUser.reauthenticateWithCredential(credential);
+    // Supprimer le bin JSONBin
+    if(profile.binId){
+      try{
+        await fetch(`${JB_BASE}/b/${profile.binId}`,{method:'DELETE',headers:{'X-Master-Key':JSONBIN_KEY}});
+      }catch(e){console.warn('delete bin err',e);}
+    }
+    // Retirer de l'index global
+    try{
+      const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+      if(idx.codes?.[profile.friendCode]){
+        delete idx.codes[profile.friendCode];
+        await jbUpdate(GLOBAL_INDEX_BIN,idx);
+      }
+    }catch(e){console.warn('delete index err',e);}
+    // Nettoyer localStorage
+    localStorage.removeItem(LS_PROFILE);
+    localStorage.removeItem(lsGame(currentUser.uid));
+    localStorage.removeItem(lsBin(currentUser.uid));
+    // Supprimer le compte Firebase
+    await currentUser.delete();
+    hideLoading();
+    showToast('✅ Compte supprimé');
+  }catch(e){
+    hideLoading();
+    if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
+      errEl.textContent='❌ Mot de passe incorrect';
+    } else {
+      errEl.textContent='❌ Erreur : '+e.code;
+    }
+  }
+}
+
+// ── AMIS SUGGÉRÉS ─────────────────────────────────────────
+async function loadSuggestedFriends(){
+  const container=document.getElementById('suggestedFriends');
+  const list=document.getElementById('suggestedList');
+  if(!container||!list)return;
+  try{
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    const allUsers=Object.values(idx.codes||{});
+    // Exclure soi-même et les amis déjà ajoutés
+    const friendUids=new Set((profile.friends||[]).map(f=>f.uid));
+    friendUids.add(currentUser.uid);
+    const candidates=allUsers.filter(u=>!friendUids.has(u.uid));
+    if(!candidates.length){container.style.display='none';return;}
+    // Prendre 2 au hasard
+    const shuffled=candidates.sort(()=>Math.random()-0.5).slice(0,2);
+    list.innerHTML='';
+    shuffled.forEach(u=>{
+      const div=document.createElement('div');div.className='suggested-row';
+      div.innerHTML=`
+        <div class="friend-avatar">${u.avatar||'😀'}</div>
+        <div class="suggested-info">
+          <div class="suggested-pseudo">${u.pseudo}</div>
+          <div class="suggested-code">${Object.keys(idx.codes).find(k=>idx.codes[k].uid===u.uid)||''}</div>
+        </div>
+        <button class="btn-suggest-add" onclick="addSuggestedFriend('${u.uid}','${u.pseudo}','${u.avatar||'😀'}','${u.binId}','${Object.keys(idx.codes).find(k=>idx.codes[k].uid===u.uid)||''}')">+ Ajouter</button>`;
+      list.appendChild(div);
+    });
+    container.style.display='block';
+  }catch(e){console.warn('suggestions err',e);container.style.display='none';}
+}
+async function addSuggestedFriend(uid,pseudo,avatar,binId,friendCode){
+  if(!profile.friends)profile.friends=[];
+  if(profile.friends.find(f=>f.uid===uid)){showToast(t('already_friend'));return;}
+  profile.friends.push({uid,pseudo,avatar,friendCode,binId});
+  saveProfile();renderFriends();updateProfileStats();
+  showToast(t('friend_added',{name:pseudo}));
+  // Ajout réciproque
+  try{
+    const theirData=await jbRead(binId);
+    if(theirData){
+      if(!theirData.friends)theirData.friends=[];
+      if(!theirData.friends.find(f=>f.uid===currentUser.uid)){
+        theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode,binId:profile.binId});
+        await jbUpdate(binId,{...theirData,friends:theirData.friends});
+      }
+    }
+  }catch(e){}
+  // Rafraîchir les suggestions
+  loadSuggestedFriends();
+}
+
 // Exposer toutes les fonctions au HTML
 Object.assign(window,{
   switchAuthTab,loginUser,registerUser,loginGoogle,confirmGooglePseudo,checkRedirectResult,
@@ -1161,5 +1298,6 @@ Object.assign(window,{
   addFriend,confirmAddFriend,removeFriend,
   openFriendProfile,openTradeModal,selectTradeCard,sendTrade,acceptTrade,declineTrade,
   copyFriendCode,selectAvatar,
-  confirmReset,doReset,requestNotifPermission
+  confirmReset,doReset,requestNotifPermission,
+  openRenameModal,doRename,confirmDeleteAccount,doDeleteAccount,addSuggestedFriend
 });

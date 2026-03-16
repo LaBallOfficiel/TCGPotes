@@ -169,6 +169,10 @@
     </div>
     <div id="friendSearchResult"></div>
     <div id="friendsList"></div>
+    <div class="suggested-friends" id="suggestedFriends" style="display:none">
+      <div class="suggested-title">💡 Suggestions</div>
+      <div id="suggestedList"></div>
+    </div>
   </div>
 
   <!-- Déconnexion -->
@@ -252,7 +256,7 @@
       <button class="mini-btn" onclick="requestNotifPermission()" data-i18n="enable">Activer</button>
     </div>
     <div style="padding:8px 0">
-      <button class="btn-save btn-save-reset" onclick="confirmReset()" data-i18n="reset_btn">🗑️ Réinitialiser la progression</button>
+      <button class="btn-delete-account" onclick="confirmDeleteAccount()">🗑️ Supprimer mon compte</button>
     </div>
   </div>
 </div>
@@ -411,6 +415,36 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Rename Modal -->
+<div class="card-modal-overlay" id="renameModal">
+  <div class="rename-modal-inner" onclick="event.stopPropagation()">
+    <div class="rename-modal-title">✏️ Changer de pseudo</div>
+    <div class="rename-input-wrap">
+      <span style="font-size:16px">👤</span>
+      <input class="rename-input" id="renameInput" type="text" placeholder="Nouveau pseudo" maxlength="20">
+    </div>
+    <div class="rename-error" id="renameError"></div>
+    <button class="btn-rename" onclick="doRename()">✅ Confirmer</button>
+    <button class="btn-modal-close" style="margin-top:8px" onclick="closeModal('renameModal')">✕ Annuler</button>
+  </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="card-modal-overlay" id="deleteAccountModal">
+  <div class="card-modal-inner" onclick="event.stopPropagation()">
+    <div style="font-size:46px;text-align:center">💀</div>
+    <div class="card-modal-name">Supprimer le compte ?</div>
+    <p style="color:var(--text-muted);font-size:13px;text-align:center;line-height:1.5;margin:8px 0 6px">
+      Toutes tes cartes, ta progression et ton profil seront <strong>définitivement supprimés</strong>.
+    </p>
+    <p style="color:var(--red);font-size:12px;text-align:center;font-weight:800;margin-bottom:16px">Cette action est irréversible !</p>
+    <input class="p-input" id="deleteConfirmInput" type="password" placeholder="Ton mot de passe pour confirmer" style="margin-bottom:10px">
+    <div class="rename-error" id="deleteError"></div>
+    <button class="btn-save btn-save-reset" style="margin-bottom:8px" onclick="doDeleteAccount()">💀 Oui, supprimer définitivement</button>
+    <button class="btn-modal-close" onclick="closeModal('deleteAccountModal')">✕ Annuler</button>
+  </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
