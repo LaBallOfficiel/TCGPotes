@@ -55,7 +55,7 @@ function buildCards(ext,total){const out=[];for(let i=1;i<=total;i++){let rarity
 const RARITY_LABELS={basique:'Basique',rare:'Rare',fullart:'Full Art',gold:'Gold'};
 const RARITY_ORDER={basique:0,rare:1,fullart:2,gold:3};
 const AVATARS=['😀','😎','🦊','🐱','🐸','🦄','🐲','🤖','👾','🧙','🧜','🦸','🎩','🌈','🍀','⭐'];
-const MAX_CHARGES=2, CHARGE_INTERVAL=6*60*60*1000, CARDS_PER_PACK=3;
+const MAX_CHARGES=2, CHARGE_INTERVAL=3*60*60*1000, CARDS_PER_PACK=3;
 
 // ══════════════════════════════════════════════════════════
 //  I18N COMPLET
@@ -107,7 +107,7 @@ const I18N={
     guide_title:'📖 Guide & Règles',
     guide_intro:'Bienvenue dans TCGPotes ! Voici tout ce que tu dois savoir.',
     guide_pack_title:'🎁 Boosters',
-    guide_pack_text:'Chaque joueur dispose de 2 recharges maximum. Une nouvelle recharge arrive toutes les 6 heures. Chaque booster contient 3 cartes tirées aléatoirement.',
+    guide_pack_text:'Chaque joueur dispose de 2 recharges maximum. Une nouvelle recharge arrive toutes les 3 heures. Chaque booster contient 3 cartes tirées aléatoirement.',
     guide_rarity_title:'✨ Raretés',
     guide_drop_title:'📊 Taux de drop',
     guide_rarity_basique:'Basique — Cartes 1 à 10',
@@ -203,7 +203,7 @@ const I18N={
     trade_accepted:'✅ ¡Intercambio aceptado!',trade_declined:'❌ Intercambio rechazado',
     friend_profile_title:'Perfil de',friend_collection:'Colección',
     guide_title:'📖 Guía y Reglas',guide_intro:'¡Bienvenido a TCGPotes!',
-    guide_pack_title:'🎁 Sobres',guide_pack_text:'Cada jugador tiene 2 recargas máx. Una nueva recarga llega cada 6 horas. Cada sobre contiene 3 cartas.',
+    guide_pack_title:'🎁 Sobres',guide_pack_text:'Cada jugador tiene 2 recargas máx. Una nueva recarga llega cada 3 horas. Cada sobre contiene 3 cartas.',
     guide_rarity_title:'✨ Rarezas',guide_drop_title:'📊 Tasas de drop',
     guide_rarity_basique:'Común — Cartas 1 a 10',guide_rarity_rare:'Rara — Cartas 11 a 20',
     guide_rarity_fullart:'Full Art — Cartas 21 a 25',guide_rarity_gold:'Gold — Carta 26',
@@ -243,7 +243,7 @@ const I18N={
     trade_accepted:'✅ Tausch angenommen!',trade_declined:'❌ Tausch abgelehnt',
     friend_profile_title:'Profil von',friend_collection:'Sammlung',
     guide_title:'📖 Anleitung & Regeln',guide_intro:'Willkommen bei TCGPotes!',
-    guide_pack_title:'🎁 Booster',guide_pack_text:'Jeder Spieler hat max. 2 Aufladungen. Alle 6 Stunden kommt eine neue. Jeder Booster enthält 3 Karten.',
+    guide_pack_title:'🎁 Booster',guide_pack_text:'Jeder Spieler hat max. 2 Aufladungen. Alle 3 Stunden kommt eine neue. Jeder Booster enthält 3 Karten.',
     guide_rarity_title:'✨ Seltenheiten',guide_drop_title:'📊 Drop-Raten',
     guide_rarity_basique:'Gewöhnlich — Karten 1–10',guide_rarity_rare:'Selten — Karten 11–20',
     guide_rarity_fullart:'Full Art — Karten 21–25',guide_rarity_gold:'Gold — Karte 26',
@@ -318,8 +318,35 @@ async function saveProfileRemote(){
   }catch(e){console.warn('save err',e);}
 }
 async function loadProfileRemote(uid){
-  const binId=localStorage.getItem(lsBin(uid));if(!binId)return null;
-  try{const data=await jbRead(binId);if(data){const{gameState:gs,...prof}=data;profile=prof;gameState=gs||loadGameLS()||defaultGame();if(!gameState.pendingTrades)gameState.pendingTrades=[];saveProfileLS();saveGame();return profile;}}catch(e){}
+  // 1. Chercher le binId en localStorage d'abord (rapide)
+  let binId=localStorage.getItem(lsBin(uid));
+
+  // 2. Si pas en localStorage, chercher dans l'index global (nouvel appareil)
+  if(!binId){
+    try{
+      setLoading('Synchronisation du compte…');
+      const idx=await jbRead(GLOBAL_INDEX_BIN);
+      if(idx&&idx.codes){
+        const entry=Object.values(idx.codes).find(v=>v.uid===uid);
+        if(entry){binId=entry.binId;localStorage.setItem(lsBin(uid),binId);}
+      }
+    }catch(e){console.warn('index lookup err',e);}
+  }
+
+  if(!binId)return null;
+  try{
+    const data=await jbRead(binId);
+    if(data){
+      const{gameState:gs,...prof}=data;
+      profile=prof;
+      gameState=gs||loadGameLS()||defaultGame();
+      if(!gameState.pendingTrades)gameState.pendingTrades=[];
+      // Mettre à jour le localStorage pour la prochaine fois
+      localStorage.setItem(lsBin(uid),binId);
+      saveProfileLS();saveGame();
+      return profile;
+    }
+  }catch(e){console.warn('loadProfileRemote err',e);}
   return null;
 }
 async function createNewProfile(uid,pseudo){
@@ -552,23 +579,50 @@ function renderPendingTrades(){
 // ══════════════════════════════════════════════════════════
 //  AMIS
 // ══════════════════════════════════════════════════════════
+// Stocke temporairement l'ami trouvé pour éviter les emojis dans onclick
+let _pendingFriend = null;
+
 async function addFriend(){
   const code=document.getElementById('friendCodeInput').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
   const result=document.getElementById('friendSearchResult');result.innerHTML='';
-  if(!code){showToast(t('own_code').replace('ton propre','un'));return;}
+  if(!code){showToast('⚠️ Entre un code ami');return;}
   if(code===profile.friendCode){showToast(t('own_code'));return;}
   if((profile.friends||[]).find(f=>f.friendCode===code)){showToast(t('already_friend'));return;}
   result.innerHTML=`<div class="friends-empty">${t('searching')}</div>`;
   const found=await lookupCode(code);
   if(!found){result.innerHTML=`<div class="friends-empty">${t('not_found')}</div>`;return;}
-  result.innerHTML=`<div class="friend-row"><div class="friend-avatar">${found.avatar||'😀'}</div><div class="friend-info"><div class="friend-pseudo">${found.pseudo}</div><div class="friend-level">${code}</div></div><button class="btn-add-friend" onclick="confirmAddFriend('${found.uid}','${found.pseudo}','${found.avatar||'😀'}','${code}','${found.binId}')">+ Ajouter</button></div>`;
+  // Stocker l'objet complet — pas de passage d'emoji dans onclick !
+  _pendingFriend={uid:found.uid,pseudo:found.pseudo,avatar:found.avatar||'😀',friendCode:code,binId:found.binId};
+  result.innerHTML=`<div class="friend-row">
+    <div class="friend-avatar">${found.avatar||'😀'}</div>
+    <div class="friend-info">
+      <div class="friend-pseudo">${found.pseudo}</div>
+      <div class="friend-level">${code}</div>
+    </div>
+    <button class="btn-add-friend" onclick="confirmAddFriend()">+ Ajouter</button>
+  </div>`;
 }
-async function confirmAddFriend(uid,pseudo,avatar,code,binId){
-  document.getElementById('friendSearchResult').innerHTML='';document.getElementById('friendCodeInput').value='';
+async function confirmAddFriend(){
+  if(!_pendingFriend)return;
+  const {uid,pseudo,avatar,friendCode,binId}=_pendingFriend;
+  _pendingFriend=null;
+  document.getElementById('friendSearchResult').innerHTML='';
+  document.getElementById('friendCodeInput').value='';
   if(!profile.friends)profile.friends=[];
-  profile.friends.push({uid,pseudo,avatar,friendCode:code,binId});
-  saveProfile();renderFriends();updateProfileStats();showToast(t('friend_added',{name:pseudo}));
-  try{const theirData=await jbRead(binId);if(theirData){if(!theirData.friends)theirData.friends=[];if(!theirData.friends.find(f=>f.uid===currentUser.uid)){theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode,binId:profile.binId});await jbUpdate(binId,theirData);}}}catch(e){}
+  profile.friends.push({uid,pseudo,avatar,friendCode,binId});
+  saveProfile();renderFriends();updateProfileStats();
+  showToast(t('friend_added',{name:pseudo}));
+  // Ajout réciproque
+  try{
+    const theirData=await jbRead(binId);
+    if(theirData){
+      if(!theirData.friends)theirData.friends=[];
+      if(!theirData.friends.find(f=>f.uid===currentUser.uid)){
+        theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode,binId:profile.binId});
+        await jbUpdate(binId,theirData);
+      }
+    }
+  }catch(e){console.warn('reciprocal friend err',e);}
 }
 function removeFriend(uid){profile.friends=(profile.friends||[]).filter(f=>f.uid!==uid);saveProfile();renderFriends();updateProfileStats();showToast(t('friend_removed'));}
 
@@ -631,7 +685,7 @@ function renderGuide(){
       <p>${t('guide_pack_text')}</p>
       <div class="guide-stats-row">
         <div class="guide-stat"><span class="guide-stat-val">2</span><span class="guide-stat-lbl">Recharges max</span></div>
-        <div class="guide-stat"><span class="guide-stat-val">6h</span><span class="guide-stat-lbl">Entre chaque</span></div>
+        <div class="guide-stat"><span class="guide-stat-val">3h</span><span class="guide-stat-lbl">Entre chaque</span></div>
         <div class="guide-stat"><span class="guide-stat-val">3</span><span class="guide-stat-lbl">Cartes/booster</span></div>
       </div>
     </div>
