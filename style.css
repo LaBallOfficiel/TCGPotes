@@ -1528,3 +1528,34 @@ body {
 }
 /* Enlever l'ancienne logique d'icône emoji dans la navbar */
 .nav-item .nav-icon { display:none; }
+
+/* ══════════════════════════════════════
+   GUIDE LEVELS GRID
+══════════════════════════════════════ */
+.guide-levels-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:6px; margin-top:10px;
+}
+.guide-level-row {
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg2); border-radius:12px;
+  padding:8px 10px; border:1px solid var(--border);
+  transition:transform 0.15s;
+}
+.guide-level-row:hover { transform:scale(1.02); }
+.guide-level-icon { font-size:20px; flex-shrink:0; }
+.guide-level-info { min-width:0; }
+.guide-level-name {
+  font-weight:800; font-size:12px; color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.guide-level-req {
+  font-size:11px; color:var(--text-muted); font-weight:700; margin-top:1px;
+}
+/* Highlight dernier niveau */
+.guide-level-row:last-child {
+  grid-column:1/-1;
+  background:linear-gradient(135deg,rgba(124,92,252,0.15),rgba(212,175,55,0.15));
+  border-color:var(--gold);
+}
+.guide-level-row:last-child .guide-level-name { color:var(--gold); }

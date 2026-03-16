@@ -120,7 +120,7 @@ const I18N={
       guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
       guide_trade_title:'🔄 Échanges',guide_trade_text:'Tu peux proposer un échange à un ami. L\'échange doit être entre deux cartes de même rareté. L\'ami doit accepter pour que l\'échange soit effectif.',
       guide_level_title:'🏆 Niveaux',guide_level_text:'Ton niveau augmente avec le nombre de cartes collectées.',
-      guide_levels:'Niv.1 Apprenti → Niv.2 Débutant (3✦) → Niv.3 Collectionneur (7✦) → Niv.4 Chasseur (13✦) → Niv.5 Expert (20✦) → Niv.6 Maître (26✦)',
+      guide_levels:'🌱 Apprenti → ⚡ Débutant (5) → 🎒 Ramasseur (15) → 📦 Collectionneur (30) → 🏹 Chasseur (50) → 🗺️ Explorateur (75) → 🧠 Stratège (100) → ⚔️ Vétéran (140) → … 🃏👑 TCGPotes (1650)',
       guide_friend_title:'👫 Amis',guide_friend_text:'Partage ton code ami à tes amis pour les ajouter. Tu peux voir leur collection et proposer des échanges.',
       lang_name:'Français'},
   en:{nav_home:'Home',nav_collection:'Collection',nav_profile:'Profile',nav_settings:'Settings',nav_guide:'Guide',
@@ -164,7 +164,7 @@ const I18N={
       guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
       guide_trade_title:'🔄 Trades',guide_trade_text:'You can propose a trade to a friend. Same rarity only. Your friend must accept.',
       guide_level_title:'🏆 Levels',guide_level_text:'Your level increases with the number of cards collected.',
-      guide_levels:'Lv.1 Apprentice → Lv.2 Beginner (3✦) → Lv.3 Collector (7✦) → Lv.4 Hunter (13✦) → Lv.5 Expert (20✦) → Lv.6 Master (26✦)',
+      guide_levels:'🌱 Apprentice → ⚡ Beginner (5) → 🎒 Gatherer (15) → 📦 Collector (30) → 🏹 Hunter (50) → 🗺️ Explorer (75) → 🧠 Strategist (100) → ⚔️ Veteran (140) → … 🃏👑 TCGPotes (1650)',
       guide_friend_title:'👫 Friends',guide_friend_text:'Share your friend code. You can view their collection and propose trades.',
       lang_name:'English'},
   es:{nav_home:'Inicio',nav_collection:'Colección',nav_profile:'Perfil',nav_settings:'Ajustes',nav_guide:'Guía',
@@ -206,7 +206,7 @@ const I18N={
       guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
       guide_trade_title:'🔄 Intercambios',guide_trade_text:'Propón un intercambio a un amigo. Solo misma rareza.',
       guide_level_title:'🏆 Niveles',guide_level_text:'Tu nivel sube con las cartas coleccionadas.',
-      guide_levels:'Nv.1 Aprendiz → Nv.2 Principiante (3✦) → Nv.3 Coleccionista (7✦) → Nv.4 Cazador (13✦) → Nv.5 Experto (20✦) → Nv.6 Maestro (26✦)',
+      guide_levels:'🌱 Aprendiz → ⚡ Principiante (5) → 🎒 Recolector (15) → 📦 Coleccionista (30) → 🏹 Cazador (50) → 🗺️ Explorador (75) → 🧠 Estratega (100) → ⚔️ Veterano (140) → … 🃏👑 TCGPotes (1650)',
       guide_friend_title:'👫 Amigos',guide_friend_text:'Comparte tu código para añadir amigos.',
       lang_name:'Español'},
   de:{nav_home:'Start',nav_collection:'Sammlung',nav_profile:'Profil',nav_settings:'Einstellungen',nav_guide:'Anleitung',
@@ -248,7 +248,7 @@ const I18N={
       guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
       guide_trade_title:'🔄 Tausche',guide_trade_text:'Nur gleiche Seltenheiten. Freund muss annehmen.',
       guide_level_title:'🏆 Level',guide_level_text:'Level steigt mit Anzahl gesammelter Karten.',
-      guide_levels:'Lv.1 Lehrling → Lv.2 Anfänger (3✦) → Lv.3 Sammler (7✦) → Lv.4 Jäger (13✦) → Lv.5 Experte (20✦) → Lv.6 Meister (26✦)',
+      guide_levels:'🌱 Lehrling → ⚡ Anfänger (5) → 🎒 Sammler (15) → 📦 Kollektor (30) → 🏹 Jäger (50) → 🗺️ Entdecker (75) → 🧠 Stratege (100) → ⚔️ Veteran (140) → … 🃏👑 TCGPotes (1650)',
       guide_friend_title:'👫 Freunde',guide_friend_text:'Teile deinen Freundescode. Sammlung ansehen und Tausche vorschlagen.',
       lang_name:'Deutsch'}
 };
@@ -292,14 +292,40 @@ function loadProfileLS(){try{const s=localStorage.getItem(LS_PROFILE);return s?J
 function defaultGame(){return{charges:MAX_CHARGES,lastChargeTime:Date.now(),currentExt:'Lycee',collection:{},pendingTrades:[],friendRequests:[]};}
 
 function genFriendCode(uid){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';let h=0;for(const c of uid)h=(h*31+c.charCodeAt(0))&0x7fffffff;let code='',tmp=h;for(let i=0;i<3;i++){code+=L[tmp%L.length];tmp=Math.floor(tmp/L.length);}return code+'-'+(1000+(h%9000));}
-function getLevel(uniq){
-  // Basé sur cartes UNIQUES, niveaux consécutifs 1→6
-  if(uniq>=26)return{num:6,label:'Maître',next:null,progress:100};
-  if(uniq>=20)return{num:5,label:'Expert',next:26,progress:Math.round((uniq-20)/6*100)};
-  if(uniq>=13)return{num:4,label:'Chasseur',next:20,progress:Math.round((uniq-13)/7*100)};
-  if(uniq>=7) return{num:3,label:'Collectionneur',next:13,progress:Math.round((uniq-7)/6*100)};
-  if(uniq>=3) return{num:2,label:'Débutant',next:7,progress:Math.round((uniq-3)/4*100)};
-  return{num:1,label:'Apprenti',next:3,progress:Math.round(uniq/3*100)};
+// Paliers de niveaux : [seuil_cartes_total, label, icone]
+const LEVELS=[
+  [0,    'Apprenti',       '🌱'],
+  [5,    'Débutant',       '⚡'],
+  [15,   'Ramasseur',      '🎒'],
+  [30,   'Collectionneur', '📦'],
+  [50,   'Chasseur',       '🏹'],
+  [75,   'Explorateur',    '🗺️'],
+  [100,  'Stratège',       '🧠'],
+  [140,  'Vétéran',        '⚔️'],
+  [180,  'Elite',          '🔱'],
+  [230,  'Champion',       '🥇'],
+  [290,  'Expert',         '💠'],
+  [360,  'Maître',         '👑'],
+  [440,  'Grand Maître',   '🌟'],
+  [530,  'Légende',        '🔥'],
+  [630,  'Mythique',       '💎'],
+  [750,  'Immortel',       '⚡👑'],
+  [900,  'Transcendant',   '🌌'],
+  [1100, 'Divin',          '✨'],
+  [1350, 'Omniscient',     '🌠'],
+  [1650, 'TCGPotes',       '🃏👑'],
+];
+function getLevel(total){
+  let lv=0;
+  for(let i=0;i<LEVELS.length;i++){if(total>=LEVELS[i][0])lv=i; else break;}
+  const num=lv+1;
+  const label=LEVELS[lv][1];
+  const icon=LEVELS[lv][2];
+  const nextLv=LEVELS[lv+1];
+  if(!nextLv)return{num,label,icon,next:null,progress:100};
+  const cur=LEVELS[lv][0], nxt=nextLv[0];
+  const progress=Math.round((total-cur)/(nxt-cur)*100);
+  return{num,label,icon,next:nxt,progress};
 }
 function getExt(id){return EXTENSIONS.find(e=>e.id===id)||EXTENSIONS[0];}
 function currentExt(){return getExt(gameState?.currentExt||'Lycee');}
@@ -849,10 +875,10 @@ async function openFriendProfile(idx){
   const ext=currentExt();
   const total=Object.values(friendGameState?.collection||{}).reduce((s,v)=>s+(v.count||0),0);
   const uniq=Object.keys(friendGameState?.collection||{}).length;
-  const lv=getLevel(uniq); // basé sur uniques
+  const lv=getLevel(total); // basé sur total
   modal.querySelector('.fp-avatar').textContent=f.avatar||'😀';
   modal.querySelector('.fp-pseudo').textContent=f.pseudo;
-  modal.querySelector('.fp-level').textContent=`Niv. ${lv.num} · ${lv.label}`;
+  modal.querySelector('.fp-level').textContent=`${lv.icon} Niv. ${lv.num} · ${lv.label}`;
   modal.querySelector('.fp-stat-cards').textContent=total;
   modal.querySelector('.fp-stat-uniq').textContent=uniq;
   const grid=modal.querySelector('.fp-collection-grid');grid.innerHTML='';
@@ -902,7 +928,16 @@ function renderGuide(){
     <div class="guide-section">
       <div class="guide-section-title">${t('guide_level_title')}</div>
       <p>${t('guide_level_text')}</p>
-      <div class="guide-levels">${t('guide_levels')}</div>
+      <div class="guide-levels-grid">
+        ${LEVELS.map((lv,i)=>`
+          <div class="guide-level-row">
+            <div class="guide-level-icon">${lv[2]}</div>
+            <div class="guide-level-info">
+              <div class="guide-level-name">Niv. ${i+1} · ${lv[1]}</div>
+              <div class="guide-level-req">${lv[0]===0?'Départ':lv[0]+' cartes'}</div>
+            </div>
+          </div>`).join('')}
+      </div>
     </div>
     <div class="guide-section">
       <div class="guide-section-title">${t('guide_friend_title')}</div>
@@ -957,24 +992,20 @@ function updateProfileStats(){
   if(!profile||!gameState)return;
   const total=Object.values(gameState.collection||{}).reduce((s,v)=>s+(v.count||0),0);
   const uniq=Object.keys(gameState.collection||{}).length;
-  const lv=getLevel(uniq); // basé sur uniques
-  // Afficher niveau + progression
+  const lv=getLevel(total); // basé sur total cartes
+  // Afficher niveau
   const lvEl=document.getElementById('pvLevel');
-  if(lvEl){
-    const nextTxt=lv.next!=null?` → ${lv.next} uniques`:'';
-    lvEl.textContent=`Niv. ${lv.num} · ${lv.label}`;
-  }
-  // Barre de progression (si elle existe)
+  if(lvEl) lvEl.textContent=`${lv.icon} Niv. ${lv.num} · ${lv.label}`;
+  // Barre de progression
   const progBar=document.getElementById('pvLevelProgress');
   if(progBar){
     progBar.style.width=lv.progress+'%';
     progBar.title=lv.next?`${lv.progress}% vers niveau ${lv.num+1}`:'Niveau max !';
   }
   const progText=document.getElementById('pvLevelProgressText');
-  if(progText && lv.next!=null){
-    progText.textContent=`${uniq} / ${lv.next} cartes uniques`;
-  } else if(progText){
-    progText.textContent='Niveau max ! 🏆';
+  if(progText){
+    if(lv.next!=null) progText.textContent=`${total} / ${lv.next} cartes`;
+    else progText.textContent='✨ Niveau maximum atteint !';
   }
   document.getElementById('statCards').textContent=total;
   document.getElementById('statUniq').textContent=uniq;
