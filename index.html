@@ -71,7 +71,7 @@
         <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Inscription</button>
         <div class="auth-tab-slider" id="authTabSlider"></div>
       </div>
-      <div id="authLogin" class="auth-form">
+      <div id="authLogin" class="auth-form" style="display:flex;flex-direction:column;gap:12px">
         <div class="auth-input-wrap"><span class="auth-input-icon">✉️</span><input class="auth-input" id="loginEmail" type="email" placeholder="Adresse email" autocomplete="email"></div>
         <div class="auth-input-wrap"><span class="auth-input-icon">🔒</span><input class="auth-input" id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password"></div>
         <div class="auth-error" id="authError"></div>

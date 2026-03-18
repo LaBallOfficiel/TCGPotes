@@ -600,8 +600,8 @@ function switchAuthTab(tab){
   if(slider)slider.classList.toggle('right',tab==='register');
   document.getElementById('tabLogin').classList.toggle('active',tab==='login');
   document.getElementById('tabRegister').classList.toggle('active',tab==='register');
-  document.getElementById('authLogin').style.display=tab==='login'?'':'none';
-  document.getElementById('authRegister').style.display=tab==='register'?'':'none';
+  document.getElementById('authLogin').style.display=tab==='login'?'flex':'none';
+  document.getElementById('authRegister').style.display=tab==='register'?'flex':'none';
   document.getElementById('authError').textContent='';
   document.getElementById('regError').textContent='';
 }
@@ -1148,16 +1148,11 @@ function openBooster(){
   gameState.charges--;
   profile.packsOpened=(profile.packsOpened||0)+1;
   saveProfile();renderCharges();
-  // Tirer les cartes et trier de la moins rare à la plus rare
   pendingCards=Array.from({length:CARDS_PER_PACK},rollCard);
-  pendingCards.sort((a,b)=>RARITY_SORT_ORDER[a.rarity]-RARITY_SORT_ORDER[b.rarity]);
   revealIndex=0;
   document.getElementById('boosterTapExtName').textContent=currentExt().name;
   showStage('stageBooster');
-  // Lueur overlay selon la meilleure carte du booster
-  const best=pendingCards[pendingCards.length-1];
-  const overlay=document.getElementById('boosterOverlay');
-  overlay.className='overlay active overlay-glow-'+best.rarity;
+  document.getElementById('boosterOverlay').classList.add('active');
 }
 function showStage(id){
   ['stageBooster','stageCards','stageRecap'].forEach(s=>{
@@ -1199,7 +1194,7 @@ function collectAll(){
     gameState.collection[card.id].isNew=true;
   });
   saveProfile();pendingCards=[];
-  const _ov=document.getElementById('boosterOverlay');_ov.className='overlay';
+  document.getElementById('boosterOverlay').classList.remove('active');
   document.getElementById('particles').innerHTML='';
   showToast(t('cards_added'));updateOwnedCount();updateProfileStats();
 }
