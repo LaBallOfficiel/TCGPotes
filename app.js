@@ -47,22 +47,64 @@ async function updateAvatarIndex(code,avatar){
 }
 
 // ── DONNÉES JEU ───────────────────────────────────────────
-const EXTENSIONS=[{id:'Lycee',name:'Lycée',icon:'🏫',desc:'26 cartes · Extension 1',total:26}];
+const EXTENSIONS=[{id:'Lycee',name:'Lycée',icon:'🏫',desc:'46 cartes · Extension 1',total:46}];
 EXTENSIONS.forEach(e=>{e.cards=buildCards(e.id,e.total);});
-function buildCards(ext,total){
-  const out=[];
-  for(let i=1;i<=total;i++){
-    let rarity,emoji;
-    if(i<=10){rarity='basique';emoji='🎴';}
-    else if(i<=20){rarity='rare';emoji='💎';}
-    else if(i<=25){rarity='fullart';emoji='🌟';}
-    else{rarity='gold';emoji='👑';}
-    out.push({id:`${ext}_${i}`,num:i,name:`Carte ${i}`,ext,rarity,emoji,img:`img/${ext}/carte${i}_ex${ext}.png`});
+// Rarités par numéro de carte — extension Lycée
+const LYCEE_RARITIES = {
+  // Cartes originales
+  1:'basique',2:'basique',3:'basique',4:'basique',5:'basique',
+  6:'basique',7:'basique',8:'basique',9:'basique',10:'basique',
+  11:'rare',12:'rare',13:'rare',14:'rare',15:'rare',
+  16:'rare',17:'rare',18:'rare',19:'rare',20:'rare',
+  21:'fullart',22:'fullart',23:'fullart',24:'fullart',25:'fullart',
+  26:'gold',
+  // Nouvelles cartes
+  27:'gold',
+  28:'basique',29:'basique',30:'basique',31:'basique',32:'basique',
+  33:'basique',34:'basique',35:'basique',
+  36:'rare',37:'rare',38:'rare',39:'rare',40:'rare',41:'rare',
+  42:'fullart',43:'fullart',44:'fullart',45:'fullart',46:'fullart',
+};
+
+const RARITY_SORT_ORDER = {basique:0, rare:1, fullart:2, gold:3};
+const RARITY_EMOJI = {basique:'🎴', rare:'💎', fullart:'🌟', gold:'👑'};
+
+function buildCards(ext, total){
+  const out = [];
+  for(let i = 1; i <= total; i++){
+    // Utiliser le mapping spécifique si disponible, sinon fallback générique
+    let rarity;
+    if(ext === 'Lycee' && LYCEE_RARITIES[i]){
+      rarity = LYCEE_RARITIES[i];
+    } else {
+      if(i <= 10) rarity = 'basique';
+      else if(i <= 20) rarity = 'rare';
+      else if(i <= 25) rarity = 'fullart';
+      else rarity = 'gold';
+    }
+    out.push({
+      id: `${ext}_${i}`,
+      num: i,
+      name: `Carte ${i}`,
+      ext,
+      rarity,
+      emoji: RARITY_EMOJI[rarity],
+      img: `img/${ext}/carte${i}_ex${ext}.png`
+    });
   }
+  // Trier par rareté pour l'affichage (basique → rare → fullart → gold)
+  // Les IDs restent identiques donc les collections existantes ne sont pas affectées
+  out.sort((a, b) => {
+    const diff = RARITY_SORT_ORDER[a.rarity] - RARITY_SORT_ORDER[b.rarity];
+    if(diff !== 0) return diff;
+    return a.num - b.num; // même rareté → ordre numérique
+  });
   return out;
 }
 
 const RARITY_LABELS={basique:'Basique',rare:'Rare',fullart:'Full Art',gold:'Gold'};
+// Ordre d'affichage dans la collection (tri par rareté, puis par numéro)
+const RARITY_SORT={basique:0,rare:1,fullart:2,gold:3};
 const AVATARS=[
   // Visages
   '😀','😎','🤩','😈','🥷','🤠','👻','💀','🤖','👾',
@@ -115,8 +157,8 @@ const I18N={
       guide_title:'📖 Guide & Règles',guide_intro:'Bienvenue dans TCGPotes ! Voici tout ce que tu dois savoir.',
       guide_pack_title:'🎁 Boosters',guide_pack_text:'Chaque joueur dispose de 2 recharges maximum. Une nouvelle recharge arrive toutes les 3 heures. Chaque booster contient 3 cartes.',
       guide_rarity_title:'✨ Raretés',guide_drop_title:'📊 Taux de drop',
-      guide_rarity_basique:'Basique — Cartes 1 à 10',guide_rarity_rare:'Rare — Cartes 11 à 20',
-      guide_rarity_fullart:'Full Art — Cartes 21 à 25',guide_rarity_gold:'Gold — Carte 26',
+      guide_rarity_basique:'Basique — Cartes 1-10, 28-35',guide_rarity_rare:'Rare — Cartes 11-20, 36-41',
+      guide_rarity_fullart:'Full Art — Cartes 21-25, 42-46',guide_rarity_gold:'Gold — Cartes 26 et 27',
       guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
       guide_trade_title:'🔄 Échanges',guide_trade_text:'Tu peux proposer un échange à un ami. L\'échange doit être entre deux cartes de même rareté. L\'ami doit accepter pour que l\'échange soit effectif.',
       guide_level_title:'🏆 Niveaux',guide_level_text:'Ton niveau augmente avec le nombre de cartes collectées.',
@@ -159,8 +201,8 @@ const I18N={
       guide_title:'📖 Guide & Rules',guide_intro:'Welcome to TCGPotes! Here\'s everything you need to know.',
       guide_pack_title:'🎁 Boosters',guide_pack_text:'Each player has 2 charges max. A new charge arrives every 3 hours. Each booster contains 3 randomly drawn cards.',
       guide_rarity_title:'✨ Rarities',guide_drop_title:'📊 Drop rates',
-      guide_rarity_basique:'Common — Cards 1 to 10',guide_rarity_rare:'Rare — Cards 11 to 20',
-      guide_rarity_fullart:'Full Art — Cards 21 to 25',guide_rarity_gold:'Gold — Card 26',
+      guide_rarity_basique:'Common — Cards 1-10, 28-35',guide_rarity_rare:'Rare — Cards 11-20, 36-41',
+      guide_rarity_fullart:'Full Art — Cards 21-25, 42-46',guide_rarity_gold:'Gold — Cards 26 & 27',
       guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
       guide_trade_title:'🔄 Trades',guide_trade_text:'You can propose a trade to a friend. Same rarity only. Your friend must accept.',
       guide_level_title:'🏆 Levels',guide_level_text:'Your level increases with the number of cards collected.',
@@ -201,8 +243,8 @@ const I18N={
       guide_title:'📖 Guía y Reglas',guide_intro:'¡Bienvenido a TCGPotes!',
       guide_pack_title:'🎁 Sobres',guide_pack_text:'2 recargas máx. Una cada 3 horas. 3 cartas por sobre.',
       guide_rarity_title:'✨ Rarezas',guide_drop_title:'📊 Tasas de drop',
-      guide_rarity_basique:'Común — Cartas 1 a 10',guide_rarity_rare:'Rara — Cartas 11 a 20',
-      guide_rarity_fullart:'Full Art — Cartas 21 a 25',guide_rarity_gold:'Gold — Carta 26',
+      guide_rarity_basique:'Común — Cartas 1-10, 28-35',guide_rarity_rare:'Rara — Cartas 11-20, 36-41',
+      guide_rarity_fullart:'Full Art — Cartas 21-25, 42-46',guide_rarity_gold:'Gold — Cartas 26 y 27',
       guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
       guide_trade_title:'🔄 Intercambios',guide_trade_text:'Propón un intercambio a un amigo. Solo misma rareza.',
       guide_level_title:'🏆 Niveles',guide_level_text:'Tu nivel sube con las cartas coleccionadas.',
@@ -243,8 +285,8 @@ const I18N={
       guide_title:'📖 Anleitung & Regeln',guide_intro:'Willkommen bei TCGPotes!',
       guide_pack_title:'🎁 Booster',guide_pack_text:'Max. 2 Aufladungen. Alle 3 Stunden eine neue. 3 Karten pro Booster.',
       guide_rarity_title:'✨ Seltenheiten',guide_drop_title:'📊 Drop-Raten',
-      guide_rarity_basique:'Gewöhnlich — Karten 1–10',guide_rarity_rare:'Selten — Karten 11–20',
-      guide_rarity_fullart:'Full Art — Karten 21–25',guide_rarity_gold:'Gold — Karte 26',
+      guide_rarity_basique:'Gewöhnlich — Karten 1-10, 28-35',guide_rarity_rare:'Selten — Karten 11-20, 36-41',
+      guide_rarity_fullart:'Full Art — Karten 21-25, 42-46',guide_rarity_gold:'Gold — Karten 26 & 27',
       guide_rate_basique:'74%',guide_rate_rare:'20%',guide_rate_fullart:'5%',guide_rate_gold:'1%',
       guide_trade_title:'🔄 Tausche',guide_trade_text:'Nur gleiche Seltenheiten. Freund muss annehmen.',
       guide_level_title:'🏆 Level',guide_level_text:'Level steigt mit Anzahl gesammelter Karten.',
@@ -882,7 +924,7 @@ async function openFriendProfile(idx){
   modal.querySelector('.fp-stat-cards').textContent=total;
   modal.querySelector('.fp-stat-uniq').textContent=uniq;
   const grid=modal.querySelector('.fp-collection-grid');grid.innerHTML='';
-  ext.cards.forEach(card=>{
+  [...ext.cards].sort((a,b)=>{const rd=RARITY_SORT[a.rarity]-RARITY_SORT[b.rarity];return rd!==0?rd:a.num-b.num;}).forEach(card=>{
     const owned=friendGameState?.collection?.[card.id];
     const item=document.createElement('div');item.className='card-item'+(owned?` owned r-${card.rarity}`:'');
     if(owned){loadCardImg(card,item,'8px');addRarityDot(item,card.rarity);}
@@ -1169,7 +1211,12 @@ function renderCollection(){
   const grid=document.getElementById('collectionGrid');grid.innerHTML='';
   document.getElementById('collectionExtLabel').textContent=`${ext.icon} Extension ${ext.name}`;
   updateOwnedCount();
-  ext.cards.forEach(card=>{
+  // Tri par rareté puis par numéro (n'affecte PAS les IDs ni la progression)
+  const sortedCards=[...ext.cards].sort((a,b)=>{
+    const rd=RARITY_SORT[a.rarity]-RARITY_SORT[b.rarity];
+    return rd!==0?rd:a.num-b.num;
+  });
+  sortedCards.forEach(card=>{
     const owned=gameState.collection[card.id];
     const item=document.createElement('div');
     item.className='card-item'+(owned?` owned r-${card.rarity}`:'');
