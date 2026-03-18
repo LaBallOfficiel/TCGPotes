@@ -47,8 +47,6 @@ async function updateAvatarIndex(code,avatar){
 }
 
 // ── DONNÉES JEU ───────────────────────────────────────────
-const EXTENSIONS=[{id:'Lycee',name:'Lycée',icon:'🏫',desc:'46 cartes · Extension 1',total:46}];
-EXTENSIONS.forEach(e=>{e.cards=buildCards(e.id,e.total);});
 // Rarités par numéro de carte — extension Lycée
 const LYCEE_RARITIES = {
   // Cartes originales
@@ -101,6 +99,9 @@ function buildCards(ext, total){
   });
   return out;
 }
+
+const EXTENSIONS=[{id:'Lycee',name:'Lycée',icon:'🏫',desc:'46 cartes · Extension 1',total:46}];
+EXTENSIONS.forEach(e=>{e.cards=buildCards(e.id,e.total);});
 
 const RARITY_LABELS={basique:'Basique',rare:'Rare',fullart:'Full Art',gold:'Gold'};
 // Ordre d'affichage dans la collection (tri par rareté, puis par numéro)
@@ -1116,15 +1117,9 @@ function updateCharges(){
 }
 function renderCharges(){
   if(!gameState)return;
-  // Reconstruire les pips dynamiquement selon MAX_CHARGES (évite le bug du 3e pip)
-  const pips=document.getElementById('chargesPips');
-  if(pips){
-    pips.innerHTML='';
-    for(let i=0;i<MAX_CHARGES;i++){
-      const p=document.createElement('div');
-      p.className='charge-pip'+(i<gameState.charges?' filled':'');
-      pips.appendChild(p);
-    }
+  for(let i=0;i<MAX_CHARGES;i++){
+    const p=document.getElementById('pip'+i);
+    if(p)p.classList.toggle('filled',i<gameState.charges);
   }
   const btn=document.getElementById('btnOpen');
   if(btn)btn.disabled=gameState.charges<=0;
@@ -1154,15 +1149,10 @@ function openBooster(){
   profile.packsOpened=(profile.packsOpened||0)+1;
   saveProfile();renderCharges();
   pendingCards=Array.from({length:CARDS_PER_PACK},rollCard);
-  // Trier de la moins rare à la plus rare (basique → rare → fullart → gold)
-  pendingCards.sort((a,b)=>RARITY_SORT_ORDER[a.rarity]-RARITY_SORT_ORDER[b.rarity]);
   revealIndex=0;
   document.getElementById('boosterTapExtName').textContent=currentExt().name;
   showStage('stageBooster');
-  // Lueur overlay selon la meilleure carte
-  const best=pendingCards[pendingCards.length-1];
-  const overlay=document.getElementById('boosterOverlay');
-  overlay.className='overlay active overlay-glow-'+best.rarity;
+  document.getElementById('boosterOverlay').classList.add('active');
 }
 function showStage(id){
   ['stageBooster','stageCards','stageRecap'].forEach(s=>{
@@ -1204,7 +1194,7 @@ function collectAll(){
     gameState.collection[card.id].isNew=true;
   });
   saveProfile();pendingCards=[];
-  const ov=document.getElementById('boosterOverlay');ov.className='overlay';
+  document.getElementById('boosterOverlay').classList.remove('active');
   document.getElementById('particles').innerHTML='';
   showToast(t('cards_added'));updateOwnedCount();updateProfileStats();
 }
