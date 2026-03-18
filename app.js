@@ -1,114 +1,49 @@
 /* ═══════════════════════════════════════════════════════════
-   TCGPOTES — app.js  v8  (Firestore — sécurisé)
+   TCGPOTES — app.js  v7  (bugfix complet)
 ═══════════════════════════════════════════════════════════ */
 
 // ── CONFIG ────────────────────────────────────────────────
 const FIREBASE_CONFIG={apiKey:"AIzaSyALLbAdXoT3-Vbcy82n1W__yIjdRpsCwZQ",authDomain:"tcgpotes-525e0.firebaseapp.com",projectId:"tcgpotes-525e0",storageBucket:"tcgpotes-525e0.firebasestorage.app",messagingSenderId:"259521841130",appId:"1:259521841130:web:ec723c4ca9f1d1987cd493"};
+const JSONBIN_KEY="$2a$10$BBj6PdhZCQE70vbGQir6Negcqd6LOBfm0RP3Y7qgdBOxwN7pzs1aO";
+const JB_BASE="https://api.jsonbin.io/v3";
+const GLOBAL_INDEX_BIN="69b4217eaa77b81da9e05e2a";
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth=firebase.auth();
-const db=firebase.firestore();
 
-// ── FIRESTORE HELPERS ─────────────────────────────────────
-// /players/{uid}  → doc privé de chaque joueur
-// /index/players  → index public {codes:{CODE:{uid,pseudo,avatar}}}
-
-async function fsWrite(uid,data){
-  await db.collection('players').doc(uid).set(data,{merge:false});
+// ── JSONBIN ───────────────────────────────────────────────
+async function jbCreate(data){
+  const r=await fetch(`${JB_BASE}/b`,{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":JSONBIN_KEY,"X-Bin-Private":"true"},body:JSON.stringify(data)});
+  const j=await r.json();return j.metadata?.id||null;
 }
-async function fsRead(uid){
-  const snap=await db.collection('players').doc(uid).get();
-  return snap.exists?snap.data():null;
+async function jbRead(binId){
+  const r=await fetch(`${JB_BASE}/b/${binId}/latest`,{headers:{"X-Master-Key":JSONBIN_KEY}});
+  if(!r.ok)throw new Error(`jbRead ${binId} → ${r.status}`);
+  const j=await r.json();return j.record||null;
 }
-async function fsDelete(uid){
-  await db.collection('players').doc(uid).delete();
+async function jbUpdate(binId,data){
+  const r=await fetch(`${JB_BASE}/b/${binId}`,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":JSONBIN_KEY},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error(`jbUpdate ${binId} → ${r.status}`);
 }
 
 // ── INDEX GLOBAL ──────────────────────────────────────────
 async function lookupCode(code){
-  try{
-    const snap=await db.collection('index').doc('players').get();
-    const idx=snap.exists?snap.data():{codes:{}};
-    return idx.codes?.[code]||null;
-  }catch(e){return null;}
+  try{const idx=await jbRead(GLOBAL_INDEX_BIN);return idx?.codes?.[code]||null;}
+  catch(e){console.warn('lookupCode err',e);return null;}
 }
-async function registerCode(code,uid,pseudo,avatar){
+async function registerCode(code,uid,binId,pseudo,avatar){
   try{
-    const ref=db.collection('index').doc('players');
-    await db.runTransaction(async tx=>{
-      const snap=await tx.get(ref);
-      const idx=snap.exists?snap.data():{codes:{}};
-      if(!idx.codes)idx.codes={};
-      idx.codes[code]={uid,pseudo,avatar};
-      tx.set(ref,idx);
-    });
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    if(!idx.codes)idx.codes={};
+    idx.codes[code]={uid,binId,pseudo,avatar};
+    await jbUpdate(GLOBAL_INDEX_BIN,idx);
   }catch(e){console.warn('registerCode err',e);}
 }
 async function updateAvatarIndex(code,avatar){
   try{
-    const ref=db.collection('index').doc('players');
-    await db.runTransaction(async tx=>{
-      const snap=await tx.get(ref);
-      const idx=snap.exists?snap.data():{codes:{}};
-      if(idx.codes?.[code]){idx.codes[code].avatar=avatar;tx.set(ref,idx);}
-    });
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    if(idx.codes?.[code]){idx.codes[code].avatar=avatar;await jbUpdate(GLOBAL_INDEX_BIN,idx);}
   }catch(e){}
-}
-async function updatePseudoIndex(code,pseudo){
-  try{
-    const ref=db.collection('index').doc('players');
-    await db.runTransaction(async tx=>{
-      const snap=await tx.get(ref);
-      const idx=snap.exists?snap.data():{codes:{}};
-      if(idx.codes?.[code]){idx.codes[code].pseudo=pseudo;tx.set(ref,idx);}
-    });
-  }catch(e){}
-}
-async function deleteFromIndex(code){
-  try{
-    const ref=db.collection('index').doc('players');
-    await db.runTransaction(async tx=>{
-      const snap=await tx.get(ref);
-      const idx=snap.exists?snap.data():{codes:{}};
-      if(idx.codes?.[code]){delete idx.codes[code];tx.set(ref,idx);}
-    });
-  }catch(e){}
-}
-
-// ── MIGRATION JSONBin → Firestore (une seule fois par joueur) ─
-// Si le joueur a un binId stocké en localStorage, on migre ses données
-// puis on supprime la référence locale.
-const JSONBIN_KEY_OLD="$2a$10$BBj6PdhZCQE70vbGQir6Negcqd6LOBfm0RP3Y7qgdBOxwN7pzs1aO";
-const JB_BASE_OLD="https://api.jsonbin.io/v3";
-const GLOBAL_INDEX_BIN_OLD="69b4217eaa77b81da9e05e2a";
-
-async function migrateFromJsonbin(uid){
-  const lsBinKey=`tcgp_bin_${uid}`;
-  const binId=localStorage.getItem(lsBinKey);
-  if(!binId)return false; // pas de migration nécessaire
-  try{
-    console.log('[Migration] JSONBin → Firestore pour',uid);
-    const r=await fetch(`${JB_BASE_OLD}/b/${binId}/latest`,{headers:{"X-Master-Key":JSONBIN_KEY_OLD}});
-    if(!r.ok){localStorage.removeItem(lsBinKey);return false;}
-    const j=await r.json();
-    const data=j.record;
-    if(!data){localStorage.removeItem(lsBinKey);return false;}
-    // Nettoyer le champ binId avant d'écrire dans Firestore
-    delete data.binId;
-    if(!data.gameState)data.gameState=defaultGame();
-    await fsWrite(uid,data);
-    // Mettre à jour l'index Firestore
-    if(data.friendCode){
-      await registerCode(data.friendCode,uid,data.pseudo,data.avatar||'😀');
-    }
-    localStorage.removeItem(lsBinKey);
-    console.log('[Migration] Succès pour',uid);
-    return true;
-  }catch(e){
-    console.warn('[Migration] Erreur',e);
-    localStorage.removeItem(lsBinKey);
-    return false;
-  }
 }
 
 // ── DONNÉES JEU ─────────────────────────────────────────────
@@ -383,13 +318,13 @@ function applyI18n(){
 let appCfg={lang:'fr',dark:false,volume:70,animations:true};
 let currentUser=null,profile=null,gameState=null,currentPage='home';
 let pendingCards=[],revealIndex=0,toastTimeout=null,musicPlaying=false;
-let tradeData={giving:null,wanting:null,friendUid:null};
+let tradeData={giving:null,wanting:null,friendUid:null,friendBinId:null};
 let _handlingAuth=false;  // bloque onAuthStateChanged pendant inscription
 let _chargeTimer=null;    // FIX: un seul intervalle, pas d'accumulation
 let _pendingFriend=null;  // stocke l'ami trouvé sans passer d'emoji en onclick
 
 const LS_CFG='tcgp_cfg', LS_PROFILE='tcgp_profile';
-const lsGame=uid=>`tcgp_game_${uid}`;
+const lsGame=uid=>`tcgp_game_${uid}`, lsBin=uid=>`tcgp_bin_${uid}`;
 
 function saveCfg(){try{localStorage.setItem(LS_CFG,JSON.stringify(appCfg));}catch(e){}}
 function loadCfg(){try{const s=localStorage.getItem(LS_CFG);if(s)appCfg={...appCfg,...JSON.parse(s)};}catch(e){}}
@@ -449,12 +384,26 @@ function saveProfile(){
 async function saveProfileRemote(){
   if(!profile||!currentUser)return;
   try{
-    await fsWrite(currentUser.uid,{...profile,gameState});
+    const binId=profile.binId||localStorage.getItem(lsBin(currentUser.uid));
+    if(!binId)return;
+    await jbUpdate(binId,{...profile,gameState});
   }catch(e){console.warn('saveProfileRemote err',e);}
 }
 async function loadProfileRemote(uid){
+  // Chercher binId dans l'index global (source de vérité partagée)
+  let binId=null;
   try{
-    const data=await fsRead(uid);
+    const idx=await jbRead(GLOBAL_INDEX_BIN);
+    const entry=idx?.codes&&Object.values(idx.codes).find(v=>v.uid===uid);
+    if(entry){binId=entry.binId;localStorage.setItem(lsBin(uid),binId);}
+  }catch(e){
+    // Index inaccessible → fallback localStorage
+    binId=localStorage.getItem(lsBin(uid));
+    console.warn('index inaccessible, fallback LS:',binId);
+  }
+  if(!binId)return null;
+  try{
+    const data=await jbRead(binId);
     if(!data)return null;
     const{gameState:gs,...prof}=data;
     profile=prof;
@@ -468,11 +417,14 @@ async function loadProfileRemote(uid){
 }
 async function createNewProfile(uid,pseudo){
   const friendCode=genFriendCode(uid);
-  profile={uid,pseudo,avatar:'😀',friendCode,friends:[],packsOpened:0};
+  profile={uid,pseudo,avatar:'😀',friendCode,binId:null,friends:[],packsOpened:0};
   gameState=defaultGame();
-  await fsWrite(uid,{...profile,gameState});
+  const binId=await jbCreate({...profile,gameState});
+  if(!binId)throw new Error('jbCreate a retourné null');
+  profile.binId=binId;
+  localStorage.setItem(lsBin(uid),binId);
   saveProfileLS();saveGame();
-  await registerCode(friendCode,uid,pseudo,'😀');
+  await registerCode(friendCode,uid,binId,pseudo,'😀');
   return profile;
 }
 
@@ -484,17 +436,6 @@ auth.onAuthStateChanged(async user=>{
 
   currentUser=user;
   setLoading('Chargement…');
-
-  // 0. Migration JSONBin → Firestore (une seule fois, silencieuse)
-  const migrated=await migrateFromJsonbin(user.uid);
-  if(migrated){
-    // Migration réussie : charger depuis Firestore directement
-    const mData=await loadProfileRemote(user.uid);
-    hideLoading();
-    if(mData){enterApp();}
-    else{showAuthPage();showToast('❌ Erreur migration, réessaie');}
-    return;
-  }
 
   // 1. Cache local → affichage immédiat
   const cached=loadProfileLS();
@@ -509,7 +450,7 @@ auth.onAuthStateChanged(async user=>{
     return;
   }
 
-  // 2. Pas de cache local → chercher dans Firestore
+  // 2. Pas de cache local → chercher dans le cloud
   const remote=await loadProfileRemote(user.uid);
   hideLoading();
   if(remote){
@@ -517,6 +458,7 @@ auth.onAuthStateChanged(async user=>{
   } else if(user.providerData[0]?.providerId==='google.com'){
     showPseudoPrompt(user);
   } else {
+    // Compte Firebase existe mais pas de profil JSONBin
     showAuthPage();
     showToast('❌ Profil introuvable, réessaie');
   }
@@ -552,9 +494,8 @@ async function registerUser(){
   setLoading('Vérification du pseudo…');
   try{
     // Vérif pseudo unique
-    const _snap=await db.collection('index').doc('players').get();
-    const _idx=_snap.exists?_snap.data():{codes:{}};
-    const taken=Object.values(_idx.codes||{}).find(v=>v.pseudo?.toLowerCase()===pseudo.toLowerCase());
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    const taken=Object.values(idx.codes||{}).find(v=>v.pseudo?.toLowerCase()===pseudo.toLowerCase());
     if(taken){_handlingAuth=false;hideLoading();setAuthError('regError','❌ Pseudo déjà pris !');return;}
 
     setLoading('Création du compte…');
@@ -666,8 +607,8 @@ function switchAuthTab(tab){
 }
 
 // ── ÉCHANGES ──────────────────────────────────────────────
-function openTradeModal(friendUid,friendPseudo){
-  tradeData={giving:null,wanting:null,friendUid};
+function openTradeModal(friendUid,friendBinId,friendPseudo){
+  tradeData={giving:null,wanting:null,friendUid,friendBinId};
   document.querySelector('#tradeModal .trade-friend-name').textContent=friendPseudo;
   renderTradeCardSelect('give');
   renderTradeCardSelect('want');
@@ -719,7 +660,7 @@ async function sendTrade(){
   if(!tradeData.giving||!tradeData.wanting)return;
   setLoading('Envoi…');
   try{
-    const theirData=await fsRead(tradeData.friendUid);
+    const theirData=await jbRead(tradeData.friendBinId);
     if(!theirData){hideLoading();showToast('❌ Impossible de joindre cet ami');return;}
     if(!theirData.gameState)theirData.gameState=defaultGame();
     if(!theirData.gameState.pendingTrades)theirData.gameState.pendingTrades=[];
@@ -728,10 +669,11 @@ async function sendTrade(){
       fromUid:currentUser.uid,
       fromPseudo:profile.pseudo,
       fromAvatar:profile.avatar,
+      fromBinId:profile.binId,
       giving:tradeData.giving,
       wanting:tradeData.wanting
     });
-    await fsWrite(tradeData.friendUid,theirData);
+    await jbUpdate(tradeData.friendBinId,theirData);
     hideLoading();
     closeModal('tradeModal');
     showToast(t('trade_sent'));
@@ -761,7 +703,7 @@ async function acceptTrade(tradeId){
   saveProfile();
   // Mise à jour de l'expéditeur
   try{
-    const theirData=await fsRead(trade.fromUid);
+    const theirData=await jbRead(trade.fromBinId);
     if(theirData&&theirData.gameState){
       if(!theirData.gameState.collection[trade.wanting.id])theirData.gameState.collection[trade.wanting.id]={count:0,isNew:true};
       theirData.gameState.collection[trade.wanting.id].count++;
@@ -770,7 +712,7 @@ async function acceptTrade(tradeId){
         theirData.gameState.collection[trade.giving.id].count--;
         if(theirData.gameState.collection[trade.giving.id].count<=0)delete theirData.gameState.collection[trade.giving.id];
       }
-      await fsWrite(trade.fromUid,theirData);
+      await jbUpdate(trade.fromBinId,theirData);
     }
   }catch(e){console.warn('acceptTrade remote err',e);}
   hideLoading();
@@ -833,7 +775,7 @@ async function addFriend(){
   resultEl.innerHTML=`<div class="friends-empty">${t('searching')}</div>`;
   const found=await lookupCode(code);
   if(!found){resultEl.innerHTML=`<div class="friends-empty">${t('not_found')}</div>`;return;}
-  _pendingFriend={uid:found.uid,pseudo:found.pseudo,avatar:found.avatar||'😀',friendCode:code};
+  _pendingFriend={uid:found.uid,pseudo:found.pseudo,avatar:found.avatar||'😀',friendCode:code,binId:found.binId};
   resultEl.innerHTML=`<div class="friend-row">
     <div class="friend-avatar">${found.avatar||'😀'}</div>
     <div class="friend-info">
@@ -846,20 +788,22 @@ async function addFriend(){
 
 async function sendFriendRequest(){
   if(!_pendingFriend)return;
-  const {uid,pseudo,avatar,friendCode}=_pendingFriend;
+  const {uid,pseudo,avatar,friendCode,binId}=_pendingFriend;
   _pendingFriend=null;
   document.getElementById('friendSearchResult').innerHTML='';
   document.getElementById('friendCodeInput').value='';
   if((profile.friends||[]).find(f=>f.uid===uid)){showToast(t('already_friend'));return;}
   setLoading('Envoi de la demande…');
   try{
-    const theirData=await fsRead(uid);
+    const theirData=await jbRead(binId);
     if(!theirData){hideLoading();showToast('❌ Impossible de joindre ce joueur');return;}
     if(!theirData.gameState)theirData.gameState=defaultGame();
     if(!theirData.gameState.friendRequests)theirData.gameState.friendRequests=[];
+    // Vérifier si demande déjà envoyée
     if(theirData.gameState.friendRequests.find(r=>r.fromUid===currentUser.uid)){
       hideLoading();showToast(t('already_sent'));return;
     }
+    // Vérifier si déjà amis de leur côté
     if((theirData.friends||[]).find(f=>f.uid===currentUser.uid)){
       hideLoading();showToast(t('already_friend'));return;
     }
@@ -868,9 +812,10 @@ async function sendFriendRequest(){
       fromUid:currentUser.uid,
       fromPseudo:profile.pseudo,
       fromAvatar:profile.avatar,
-      fromFriendCode:profile.friendCode
+      fromFriendCode:profile.friendCode,
+      fromBinId:profile.binId
     });
-    await fsWrite(uid,theirData);
+    await jbUpdate(binId,theirData);
     hideLoading();
     showToast(t('friend_req_sent',{name:pseudo}));
   }catch(e){hideLoading();showToast('❌ Erreur envoi demande');console.warn(e);}
@@ -883,19 +828,19 @@ async function acceptFriendRequest(reqId){
   // Ajouter localement
   if(!profile.friends)profile.friends=[];
   if(!profile.friends.find(f=>f.uid===req.fromUid)){
-    profile.friends.push({uid:req.fromUid,pseudo:req.fromPseudo,avatar:req.fromAvatar,friendCode:req.fromFriendCode});
+    profile.friends.push({uid:req.fromUid,pseudo:req.fromPseudo,avatar:req.fromAvatar,friendCode:req.fromFriendCode,binId:req.fromBinId});
   }
   gameState.friendRequests=gameState.friendRequests.filter(r=>r.id!==reqId);
   saveProfile();
   renderFriendRequests();renderFriends();updateProfileStats();
   // Ajouter réciproquement chez l'expéditeur
   try{
-    const theirData=await fsRead(req.fromUid);
+    const theirData=await jbRead(req.fromBinId);
     if(theirData){
       if(!theirData.friends)theirData.friends=[];
       if(!theirData.friends.find(f=>f.uid===currentUser.uid)){
-        theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode});
-        await fsWrite(req.fromUid,theirData);
+        theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode,binId:profile.binId});
+        await jbUpdate(req.fromBinId,{...theirData,friends:theirData.friends});
       }
     }
   }catch(e){console.warn('accept reciprocal err',e);}
@@ -955,7 +900,7 @@ function renderFriends(){
         <div class="friend-level">${f.friendCode}</div>
       </div>
       <button class="friend-action-btn" onclick="openFriendProfile(${i})" title="${t('view_profile')}">👁</button>
-      <button class="friend-action-btn" onclick="openTradeModal('${f.uid}','${f.pseudo}')" title="${t('propose_trade')}">🔄</button>
+      <button class="friend-action-btn" onclick="openTradeModal('${f.uid}','${f.binId}','${f.pseudo}')" title="${t('propose_trade')}">🔄</button>
       <button class="friend-remove" onclick="removeFriend('${f.uid}')" title="${t('remove_friend')}">✕</button>`;
     list.appendChild(row);
   });
@@ -967,7 +912,7 @@ async function openFriendProfile(idx){
   if(!f)return;
   setLoading('Chargement…');
   let friendGameState=null;
-  try{const data=await fsRead(f.uid);if(data)friendGameState=data.gameState;}catch(e){}
+  try{const data=await jbRead(f.binId);if(data)friendGameState=data.gameState;}catch(e){}
   hideLoading();
   const modal=document.getElementById('friendProfileModal');
   const ext=currentExt();
@@ -1203,11 +1148,16 @@ function openBooster(){
   gameState.charges--;
   profile.packsOpened=(profile.packsOpened||0)+1;
   saveProfile();renderCharges();
+  // Tirer les cartes et trier de la moins rare à la plus rare
   pendingCards=Array.from({length:CARDS_PER_PACK},rollCard);
+  pendingCards.sort((a,b)=>RARITY_SORT_ORDER[a.rarity]-RARITY_SORT_ORDER[b.rarity]);
   revealIndex=0;
   document.getElementById('boosterTapExtName').textContent=currentExt().name;
   showStage('stageBooster');
-  document.getElementById('boosterOverlay').classList.add('active');
+  // Lueur overlay selon la meilleure carte du booster
+  const best=pendingCards[pendingCards.length-1];
+  const overlay=document.getElementById('boosterOverlay');
+  overlay.className='overlay active overlay-glow-'+best.rarity;
 }
 function showStage(id){
   ['stageBooster','stageCards','stageRecap'].forEach(s=>{
@@ -1249,7 +1199,7 @@ function collectAll(){
     gameState.collection[card.id].isNew=true;
   });
   saveProfile();pendingCards=[];
-  document.getElementById('boosterOverlay').classList.remove('active');
+  const _ov=document.getElementById('boosterOverlay');_ov.className='overlay';
   document.getElementById('particles').innerHTML='';
   showToast(t('cards_added'));updateOwnedCount();updateProfileStats();
 }
@@ -1432,13 +1382,17 @@ async function doRename(){
   setLoading('Vérification…');
   try{
     // Vérifier unicité
-    const _rSnap=await db.collection('index').doc('players').get();
-    const _rIdx=_rSnap.exists?_rSnap.data():{codes:{}};
-    const taken=Object.values(_rIdx.codes||{}).find(v=>v.pseudo?.toLowerCase()===newPseudo.toLowerCase()&&v.uid!==currentUser.uid);
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    const taken=Object.values(idx.codes||{}).find(v=>v.pseudo?.toLowerCase()===newPseudo.toLowerCase()&&v.uid!==currentUser.uid);
     if(taken){hideLoading();errEl.textContent='❌ Pseudo déjà pris !';return;}
+    // Mettre à jour le profil
     const oldPseudo=profile.pseudo;
     profile.pseudo=newPseudo;
-    await updatePseudoIndex(profile.friendCode,newPseudo);
+    // Mettre à jour l'index global
+    if(idx.codes?.[profile.friendCode]){
+      idx.codes[profile.friendCode].pseudo=newPseudo;
+      await jbUpdate(GLOBAL_INDEX_BIN,idx);
+    }
     saveProfile();
     updateProfileView();
     hideLoading();
@@ -1463,12 +1417,24 @@ async function doDeleteAccount(){
     // Ré-authentifier pour confirmer
     const credential=firebase.auth.EmailAuthProvider.credential(currentUser.email,pass);
     await currentUser.reauthenticateWithCredential(credential);
-    // Supprimer les données Firestore
-    try{await fsDelete(currentUser.uid);}catch(e){console.warn('delete player err',e);}
-    await deleteFromIndex(profile.friendCode);
+    // Supprimer le bin JSONBin
+    if(profile.binId){
+      try{
+        await fetch(`${JB_BASE}/b/${profile.binId}`,{method:'DELETE',headers:{'X-Master-Key':JSONBIN_KEY}});
+      }catch(e){console.warn('delete bin err',e);}
+    }
+    // Retirer de l'index global
+    try{
+      const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+      if(idx.codes?.[profile.friendCode]){
+        delete idx.codes[profile.friendCode];
+        await jbUpdate(GLOBAL_INDEX_BIN,idx);
+      }
+    }catch(e){console.warn('delete index err',e);}
     // Nettoyer localStorage
     localStorage.removeItem(LS_PROFILE);
     localStorage.removeItem(lsGame(currentUser.uid));
+    localStorage.removeItem(lsBin(currentUser.uid));
     // Supprimer le compte Firebase
     await currentUser.delete();
     hideLoading();
@@ -1489,13 +1455,14 @@ async function loadSuggestedFriends(){
   const list=document.getElementById('suggestedList');
   if(!container||!list)return;
   try{
-    const _sSnap=await db.collection('index').doc('players').get();
-    const _sIdx=_sSnap.exists?_sSnap.data():{codes:{}};
-    const allUsers=Object.entries(_sIdx.codes||{}).map(([code,u])=>({...u,friendCode:code}));
+    const idx=await jbRead(GLOBAL_INDEX_BIN)||{codes:{}};
+    const allUsers=Object.values(idx.codes||{});
+    // Exclure soi-même et les amis déjà ajoutés
     const friendUids=new Set((profile.friends||[]).map(f=>f.uid));
     friendUids.add(currentUser.uid);
     const candidates=allUsers.filter(u=>!friendUids.has(u.uid));
     if(!candidates.length){container.style.display='none';return;}
+    // Prendre 2 au hasard
     const shuffled=candidates.sort(()=>Math.random()-0.5).slice(0,2);
     list.innerHTML='';
     shuffled.forEach(u=>{
@@ -1504,30 +1471,32 @@ async function loadSuggestedFriends(){
         <div class="friend-avatar">${u.avatar||'😀'}</div>
         <div class="suggested-info">
           <div class="suggested-pseudo">${u.pseudo}</div>
-          <div class="suggested-code">${u.friendCode}</div>
+          <div class="suggested-code">${Object.keys(idx.codes).find(k=>idx.codes[k].uid===u.uid)||''}</div>
         </div>
-        <button class="btn-suggest-add" onclick="addSuggestedFriend('${u.uid}','${u.pseudo}','${u.avatar||'😀'}','${u.friendCode}')">+ Ajouter</button>`;
+        <button class="btn-suggest-add" onclick="addSuggestedFriend('${u.uid}','${u.pseudo}','${u.avatar||'😀'}','${u.binId}','${Object.keys(idx.codes).find(k=>idx.codes[k].uid===u.uid)||''}')">+ Ajouter</button>`;
       list.appendChild(div);
     });
     container.style.display='block';
   }catch(e){console.warn('suggestions err',e);container.style.display='none';}
 }
-async function addSuggestedFriend(uid,pseudo,avatar,friendCode){
+async function addSuggestedFriend(uid,pseudo,avatar,binId,friendCode){
   if(!profile.friends)profile.friends=[];
   if(profile.friends.find(f=>f.uid===uid)){showToast(t('already_friend'));return;}
-  profile.friends.push({uid,pseudo,avatar,friendCode});
+  profile.friends.push({uid,pseudo,avatar,friendCode,binId});
   saveProfile();renderFriends();updateProfileStats();
   showToast(t('friend_added',{name:pseudo}));
+  // Ajout réciproque
   try{
-    const theirData=await fsRead(uid);
+    const theirData=await jbRead(binId);
     if(theirData){
       if(!theirData.friends)theirData.friends=[];
       if(!theirData.friends.find(f=>f.uid===currentUser.uid)){
-        theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode});
-        await fsWrite(uid,theirData);
+        theirData.friends.push({uid:currentUser.uid,pseudo:profile.pseudo,avatar:profile.avatar,friendCode:profile.friendCode,binId:profile.binId});
+        await jbUpdate(binId,{...theirData,friends:theirData.friends});
       }
     }
   }catch(e){}
+  // Rafraîchir les suggestions
   loadSuggestedFriends();
 }
 
