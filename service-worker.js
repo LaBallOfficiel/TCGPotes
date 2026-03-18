@@ -3,7 +3,7 @@
    Cache offline de tous les assets du projet
 ═══════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'tcgpotes-v1';
+const CACHE_NAME = 'tcgpotes-v3';
 
 // Tous les fichiers à mettre en cache pour le mode offline
 const ASSETS_TO_CACHE = [

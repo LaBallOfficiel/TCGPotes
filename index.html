@@ -506,20 +506,23 @@
       navigator.serviceWorker.register('/TCGPotes/service-worker.js', { scope: '/TCGPotes/' })
         .then(reg => {
           console.log('[PWA] Service Worker enregistré :', reg.scope);
-          // Vérifier si une nouvelle version est disponible
+          // Dès qu'une nouvelle version est trouvée, l'activer immédiatement
           reg.addEventListener('updatefound', () => {
             const newWorker = reg.installing;
             newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // Nouvelle version dispo — notifier l'utilisateur
-                if (typeof showToast === 'function') {
-                  showToast('🔄 Mise à jour disponible ! Recharge la page.');
-                }
+              if (newWorker.state === 'installed') {
+                // Forcer l'activation immédiate sans attendre la prochaine session
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
               }
             });
           });
         })
         .catch(err => console.warn('[PWA] SW non enregistré :', err));
+
+      // Quand le nouveau SW prend le contrôle, recharger silencieusement
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
     });
   }
 </script>

@@ -47,6 +47,8 @@ async function updateAvatarIndex(code,avatar){
 }
 
 // ── DONNÉES JEU ───────────────────────────────────────────
+const EXTENSIONS=[{id:'Lycee',name:'Lycée',icon:'🏫',desc:'46 cartes · Extension 1',total:46}];
+EXTENSIONS.forEach(e=>{e.cards=buildCards(e.id,e.total);});
 // Rarités par numéro de carte — extension Lycée
 const LYCEE_RARITIES = {
   // Cartes originales
@@ -99,9 +101,6 @@ function buildCards(ext, total){
   });
   return out;
 }
-
-const EXTENSIONS=[{id:'Lycee',name:'Lycée',icon:'🏫',desc:'46 cartes · Extension 1',total:46}];
-EXTENSIONS.forEach(e=>{e.cards=buildCards(e.id,e.total);});
 
 const RARITY_LABELS={basique:'Basique',rare:'Rare',fullart:'Full Art',gold:'Gold'};
 // Ordre d'affichage dans la collection (tri par rareté, puis par numéro)
