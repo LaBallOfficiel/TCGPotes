@@ -38,6 +38,73 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- ══════════ PROTECTION DOMAINE ══════════ -->
+<script>
+(function(){
+  const ALLOWED = 'laballofficiel.github.io';
+  if(location.hostname !== ALLOWED && location.hostname !== 'localhost'){
+    document.documentElement.innerHTML = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>TCGPotes — Accès refusé</title>
+        <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+        <style>
+          *{margin:0;padding:0;box-sizing:border-box}
+          body{
+            min-height:100vh;display:flex;align-items:center;justify-content:center;
+            background:#0f173c;font-family:'Nunito',sans-serif;
+            background-image:radial-gradient(ellipse at 20% 50%,rgba(124,92,252,.15) 0,transparent 60%),
+                             radial-gradient(ellipse at 80% 20%,rgba(244,63,142,.1) 0,transparent 50%);
+          }
+          .box{
+            text-align:center;padding:48px 32px;max-width:420px;
+            background:rgba(255,255,255,.04);
+            border:1px solid rgba(255,255,255,.08);
+            border-radius:24px;
+            backdrop-filter:blur(20px);
+          }
+          .icon{font-size:72px;margin-bottom:20px;display:block;
+            animation:pulse 2s ease-in-out infinite;}
+          @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+          h1{font-family:'Fredoka One',cursive;font-size:32px;color:#fff;
+            margin-bottom:10px;letter-spacing:.5px;}
+          .sub{font-size:15px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:28px;}
+          .badge{
+            display:inline-block;padding:6px 18px;border-radius:20px;
+            background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);
+            color:#f87171;font-size:12px;font-weight:800;letter-spacing:.1em;
+            text-transform:uppercase;margin-bottom:28px;
+          }
+          .btn{
+            display:inline-block;padding:14px 32px;border-radius:50px;
+            background:linear-gradient(135deg,#7c5cfc,#f43f8e);
+            color:#fff;font-family:'Fredoka One',cursive;font-size:17px;
+            text-decoration:none;transition:opacity .2s;
+            box-shadow:0 8px 24px rgba(124,92,252,.4);
+          }
+          .btn:hover{opacity:.85}
+          .domain{font-family:monospace;font-size:11px;color:rgba(255,255,255,.25);margin-top:20px;}
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <span class="icon">🚫</span>
+          <div class="badge">⚠️ Site non autorisé</div>
+          <h1>Ce site est une copie non officielle</h1>
+          <p class="sub">TCGPotes n'est disponible que sur le site officiel.<br>Ce site tiers n'est pas approuvé et peut être dangereux.</p>
+          <a class="btn" href="https://laballofficiel.github.io/TCGPotes/">
+            Aller sur le vrai TCGPotes →
+          </a>
+          <div class="domain">Domaine détecté : ${location.hostname}</div>
+        </div>
+      </body>
+      </html>`;
+  }
+})();
+</script>
 
 <div class="bg-bubbles" id="bgBubbles"></div>
 <audio id="bgMusic" src="musique/musique.mp3" loop></audio>
@@ -71,7 +138,7 @@
         <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Inscription</button>
         <div class="auth-tab-slider" id="authTabSlider"></div>
       </div>
-      <div id="authLogin" class="auth-form" style="display:flex;flex-direction:column;gap:12px">
+      <div id="authLogin" class="auth-form">
         <div class="auth-input-wrap"><span class="auth-input-icon">✉️</span><input class="auth-input" id="loginEmail" type="email" placeholder="Adresse email" autocomplete="email"></div>
         <div class="auth-input-wrap"><span class="auth-input-icon">🔒</span><input class="auth-input" id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password"></div>
         <div class="auth-error" id="authError"></div>
