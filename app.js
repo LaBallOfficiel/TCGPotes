@@ -75,7 +75,6 @@ async function deleteFromIndex(code){
 // ── MIGRATION JSONBin → Firestore (une seule fois par joueur) ─
 const JSONBIN_KEY_OLD="$2a$10$BBj6PdhZCQE70vbGQir6Negcqd6LOBfm0RP3Y7qgdBOxwN7pzs1aO";
 const JB_BASE_OLD="https://api.jsonbin.io/v3";
-const GLOBAL_INDEX_BIN_OLD="69b4217eaa77b81da9e05e2a";
 
 async function migrateFromJsonbin(uid){
   const lsBinKey=`tcgp_bin_${uid}`;
@@ -91,9 +90,7 @@ async function migrateFromJsonbin(uid){
     delete data.binId;
     if(!data.gameState)data.gameState=defaultGame();
     await fsWrite(uid,data);
-    if(data.friendCode){
-      await registerCode(data.friendCode,uid,data.pseudo,data.avatar||'😀');
-    }
+    if(data.friendCode)await registerCode(data.friendCode,uid,data.pseudo,data.avatar||'😀');
     localStorage.removeItem(lsBinKey);
     console.log('[Migration] Succès pour',uid);
     return true;
@@ -441,9 +438,8 @@ function saveProfile(){
 }
 async function saveProfileRemote(){
   if(!profile||!currentUser)return;
-  try{
-    await fsWrite(currentUser.uid,{...profile,gameState});
-  }catch(e){console.warn('saveProfileRemote err',e);}
+  try{await fsWrite(currentUser.uid,{...profile,gameState});}
+  catch(e){console.warn('saveProfileRemote err',e);}
 }
 async function loadProfileRemote(uid){
   try{
@@ -478,13 +474,12 @@ auth.onAuthStateChanged(async user=>{
   currentUser=user;
   setLoading('Chargement…');
 
-  // 0. Migration JSONBin → Firestore (une seule fois, silencieuse)
+  // 0. Migration JSONBin → Firestore (silencieuse, une seule fois)
   const migrated=await migrateFromJsonbin(user.uid);
   if(migrated){
     const mData=await loadProfileRemote(user.uid);
     hideLoading();
-    if(mData){enterApp();}
-    else{showAuthPage();showToast('❌ Erreur migration, réessaie');}
+    if(mData){enterApp();}else{showAuthPage();showToast('❌ Erreur migration, réessaie');}
     return;
   }
 
