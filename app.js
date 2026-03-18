@@ -1116,9 +1116,15 @@ function updateCharges(){
 }
 function renderCharges(){
   if(!gameState)return;
-  for(let i=0;i<MAX_CHARGES;i++){
-    const p=document.getElementById('pip'+i);
-    if(p)p.classList.toggle('filled',i<gameState.charges);
+  // Reconstruire les pips dynamiquement selon MAX_CHARGES (évite le bug du 3e pip)
+  const pips=document.getElementById('chargesPips');
+  if(pips){
+    pips.innerHTML='';
+    for(let i=0;i<MAX_CHARGES;i++){
+      const p=document.createElement('div');
+      p.className='charge-pip'+(i<gameState.charges?' filled':'');
+      pips.appendChild(p);
+    }
   }
   const btn=document.getElementById('btnOpen');
   if(btn)btn.disabled=gameState.charges<=0;
@@ -1148,10 +1154,15 @@ function openBooster(){
   profile.packsOpened=(profile.packsOpened||0)+1;
   saveProfile();renderCharges();
   pendingCards=Array.from({length:CARDS_PER_PACK},rollCard);
+  // Trier de la moins rare à la plus rare (basique → rare → fullart → gold)
+  pendingCards.sort((a,b)=>RARITY_SORT_ORDER[a.rarity]-RARITY_SORT_ORDER[b.rarity]);
   revealIndex=0;
   document.getElementById('boosterTapExtName').textContent=currentExt().name;
   showStage('stageBooster');
-  document.getElementById('boosterOverlay').classList.add('active');
+  // Lueur overlay selon la meilleure carte
+  const best=pendingCards[pendingCards.length-1];
+  const overlay=document.getElementById('boosterOverlay');
+  overlay.className='overlay active overlay-glow-'+best.rarity;
 }
 function showStage(id){
   ['stageBooster','stageCards','stageRecap'].forEach(s=>{
@@ -1193,7 +1204,7 @@ function collectAll(){
     gameState.collection[card.id].isNew=true;
   });
   saveProfile();pendingCards=[];
-  document.getElementById('boosterOverlay').classList.remove('active');
+  const ov=document.getElementById('boosterOverlay');ov.className='overlay';
   document.getElementById('particles').innerHTML='';
   showToast(t('cards_added'));updateOwnedCount();updateProfileStats();
 }

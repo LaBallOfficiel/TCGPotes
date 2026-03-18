@@ -631,11 +631,21 @@ body {
 }
 .btn-collect-all:active { transform:scale(0.96); }
 
-/* Glow */
+/* Glow carte */
 .reveal-glow-basique { box-shadow:0 0 20px rgba(200,200,200,0.25); }
 .reveal-glow-rare    { box-shadow:0 0 30px rgba(59,130,246,0.6),  0 0 60px rgba(59,130,246,0.3); }
 .reveal-glow-fullart { box-shadow:0 0 40px rgba(139,92,246,0.6),  0 0 80px rgba(139,92,246,0.3); }
 .reveal-glow-gold    { box-shadow:0 0 50px rgba(245,158,11,0.7), 0 0 100px rgba(245,158,11,0.4); }
+
+/* Lueur overlay booster selon la meilleure carte */
+.overlay-glow-basique { background:linear-gradient(135deg,rgba(70,70,90,0.97),rgba(50,50,70,0.97)); }
+.overlay-glow-rare    { background:linear-gradient(135deg,rgba(30,58,138,0.97),rgba(59,130,246,0.95)); }
+.overlay-glow-fullart { background:linear-gradient(135deg,rgba(88,28,135,0.97),rgba(139,92,246,0.95)); }
+.overlay-glow-gold    { background:linear-gradient(135deg,rgba(120,53,15,0.97),rgba(245,158,11,0.95)); }
+
+/* Recap centré */
+.recap-stage { justify-content:center; }
+.recap-grid  { justify-items:center; max-width:360px; margin:0 auto; }
 
 /* ══════════════════
    CARD MODAL
