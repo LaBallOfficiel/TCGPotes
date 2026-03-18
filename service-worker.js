@@ -1,21 +1,26 @@
 /* ═══════════════════════════════════════════════════════════
    TCGPotes — service-worker.js
-   Cache offline de tous les assets du projet
+   Stratégie mixte :
+   - app.js / index.html / style.css → Network First (toujours frais)
+   - images / fonts → Cache First (performances)
 ═══════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'tcgpotes-v3';
+const CACHE_NAME = 'tcgpotes-v4';
 
-// Tous les fichiers à mettre en cache pour le mode offline
+// Fichiers critiques : toujours récupérés depuis le réseau en priorité
+const NETWORK_FIRST = [
+  '/TCGPotes/app.js',
+  '/TCGPotes/index.html',
+  '/TCGPotes/style.css',
+  '/TCGPotes/',
+];
+
 const ASSETS_TO_CACHE = [
   '/TCGPotes/',
   '/TCGPotes/index.html',
   '/TCGPotes/style.css',
   '/TCGPotes/app.js',
   '/TCGPotes/manifest.json',
-  '/TCGPotes/icons/icon-192.png',
-  '/TCGPotes/icons/icon-512.png',
-  '/TCGPotes/musique/musique.mp3',
-  // Cartes Lycée
   '/TCGPotes/img/Lycee/carte1_exLycee.png',
   '/TCGPotes/img/Lycee/carte2_exLycee.png',
   '/TCGPotes/img/Lycee/carte3_exLycee.png',
@@ -42,15 +47,33 @@ const ASSETS_TO_CACHE = [
   '/TCGPotes/img/Lycee/carte24_exLycee.png',
   '/TCGPotes/img/Lycee/carte25_exLycee.png',
   '/TCGPotes/img/Lycee/carte26_exLycee.png',
-  // Fonts Google (tentative — peut échouer si offline dès le 1er chargement)
+  '/TCGPotes/img/Lycee/carte27_exLycee.png',
+  '/TCGPotes/img/Lycee/carte28_exLycee.png',
+  '/TCGPotes/img/Lycee/carte29_exLycee.png',
+  '/TCGPotes/img/Lycee/carte30_exLycee.png',
+  '/TCGPotes/img/Lycee/carte31_exLycee.png',
+  '/TCGPotes/img/Lycee/carte32_exLycee.png',
+  '/TCGPotes/img/Lycee/carte33_exLycee.png',
+  '/TCGPotes/img/Lycee/carte34_exLycee.png',
+  '/TCGPotes/img/Lycee/carte35_exLycee.png',
+  '/TCGPotes/img/Lycee/carte36_exLycee.png',
+  '/TCGPotes/img/Lycee/carte37_exLycee.png',
+  '/TCGPotes/img/Lycee/carte38_exLycee.png',
+  '/TCGPotes/img/Lycee/carte39_exLycee.png',
+  '/TCGPotes/img/Lycee/carte40_exLycee.png',
+  '/TCGPotes/img/Lycee/carte41_exLycee.png',
+  '/TCGPotes/img/Lycee/carte42_exLycee.png',
+  '/TCGPotes/img/Lycee/carte43_exLycee.png',
+  '/TCGPotes/img/Lycee/carte44_exLycee.png',
+  '/TCGPotes/img/Lycee/carte45_exLycee.png',
+  '/TCGPotes/img/Lycee/carte46_exLycee.png',
   'https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap',
 ];
 
-// ── INSTALL : mise en cache de tous les assets ────────────
+// ── INSTALL ───────────────────────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // On cache tout ce qu'on peut, mais on ignore les erreurs individuelles
       return Promise.allSettled(
         ASSETS_TO_CACHE.map(url =>
           cache.add(url).catch(err => {
@@ -59,13 +82,13 @@ self.addEventListener('install', event => {
         )
       );
     }).then(() => {
-      console.log('[SW] Installation terminée');
-      return self.skipWaiting(); // Activer immédiatement sans attendre
+      console.log('[SW] Installation v4 terminée');
+      return self.skipWaiting();
     })
   );
 });
 
-// ── ACTIVATE : supprimer les anciens caches ───────────────
+// ── ACTIVATE : supprimer TOUS les anciens caches ─────────
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -78,17 +101,17 @@ self.addEventListener('activate', event => {
           })
       )
     ).then(() => {
-      console.log('[SW] Activation terminée');
-      return self.clients.claim(); // Prendre le contrôle immédiatement
+      console.log('[SW] Activation v4 terminée');
+      return self.clients.claim();
     })
   );
 });
 
-// ── FETCH : stratégie Cache First, réseau en fallback ─────
+// ── FETCH : Network First pour les fichiers critiques ─────
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Ne pas intercepter les appels API (JSONBin, Firebase)
+  // Ne pas intercepter les appels API Firebase/JSONBin
   if (
     url.hostname === 'api.jsonbin.io' ||
     url.hostname.includes('firebaseapp.com') ||
@@ -98,41 +121,44 @@ self.addEventListener('fetch', event => {
     url.hostname.includes('securetoken.googleapis.com') ||
     url.hostname === 'www.gstatic.com'
   ) {
-    // Laisser passer directement vers le réseau
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) {
-        // Retourner le cache et mettre à jour en arrière-plan (stale-while-revalidate)
-        const networkFetch = fetch(event.request)
-          .then(response => {
-            if (response && response.status === 200 && response.type !== 'opaque') {
-              caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
-            }
-            return response;
-          })
-          .catch(() => {/* offline, pas grave */});
-        return cached;
-      }
-      // Pas en cache → réseau, puis mise en cache
-      return fetch(event.request)
+  const pathname = url.pathname;
+  const isNetworkFirst = NETWORK_FIRST.some(p => pathname === p || pathname.endsWith(p));
+
+  if (isNetworkFirst) {
+    // Network First : réseau en priorité, cache si offline
+    event.respondWith(
+      fetch(event.request)
         .then(response => {
-          if (!response || response.status !== 200 || response.type === 'opaque') {
-            return response;
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           }
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
           return response;
         })
-        .catch(() => {
-          // Offline total et pas en cache → page de fallback
-          if (event.request.destination === 'document') {
-            return caches.match('/TCGPotes/index.html');
-          }
-        });
-    })
-  );
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache First pour les images et autres assets statiques
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request)
+          .then(response => {
+            if (!response || response.status !== 200 || response.type === 'opaque') return response;
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+            return response;
+          })
+          .catch(() => {
+            if (event.request.destination === 'document') {
+              return caches.match('/TCGPotes/index.html');
+            }
+          });
+      })
+    );
+  }
 });
 
 // ── MESSAGE : forcer la mise à jour depuis l'app ──────────
