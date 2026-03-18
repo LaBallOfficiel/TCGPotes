@@ -5,7 +5,7 @@
    - images / fonts → Cache First (performances)
 ═══════════════════════════════════════════════════════════ */
 
-const CACHE_NAME = 'tcgpotes-v5';
+const CACHE_NAME = 'tcgpotes-v6';
 
 // Fichiers critiques : toujours récupérés depuis le réseau en priorité
 const NETWORK_FIRST = [
