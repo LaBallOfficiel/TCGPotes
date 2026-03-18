@@ -317,7 +317,11 @@
     <div class="login-logo">TCG<span>Potes</span></div>
     <div class="login-sub">// panel d'administration</div>
     <div class="login-label">Mot de passe admin</div>
-    <input type="password" id="adminPass" class="login-input" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')tryLogin()">
+    <div style="position:relative">
+      <input type="password" id="adminPass" class="login-input" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')tryLogin()" style="padding-right:44px;margin-bottom:0">
+      <button onclick="togglePass()" id="eyeBtn" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)">👁</button>
+    </div>
+    <div style="margin-bottom:20px"></div>
     <button class="login-btn" onclick="tryLogin()">Accéder au panel →</button>
     <div class="login-error" id="loginError"></div>
   </div>
@@ -426,30 +430,37 @@ async function sha256(str){
 
 async function tryLogin(){
   const pass = document.getElementById('adminPass').value;
-  if(!pass){ document.getElementById('loginError').textContent = '⚠️ Entre le mot de passe'; return; }
+  const errEl = document.getElementById('loginError');
+  if(!pass){ errEl.textContent = '⚠️ Entre le mot de passe'; return; }
+  errEl.textContent = '⏳ Vérification…';
   const hash = await sha256(pass);
-
-  // Vérifier contre le hash dans Firestore /admin/config
+  console.log('[Admin] Hash calculé:', hash);
+  let ok = false;
   try{
-    // Vérifier d'abord contre Firestore (lecture publique /admin/config)
-    let ok = false;
-    try{
-      const snap = await db.collection('admin').doc('config').get();
-      if(snap.exists){ ok = snap.data().passHash === hash; }
-      else { ok = hash === ADMIN_PASS_HASH; }
-    } catch(e){
-      // Firestore inaccessible → fallback hash local
-      ok = hash === ADMIN_PASS_HASH;
-    }
-    if(ok){
-      isAdmin = true;
-      sessionStorage.setItem('tcgp_admin', hash);
-      showApp();
-    } else {
-      document.getElementById('loginError').textContent = '❌ Mot de passe incorrect';
-      document.getElementById('adminPass').value = '';
-    }
+    const snap = await db.collection('admin').doc('config').get();
+    console.log('[Admin] Doc exists:', snap.exists, snap.exists ? snap.data() : 'vide');
+    ok = snap.exists ? snap.data().passHash === hash : hash === ADMIN_PASS_HASH;
+  } catch(e){
+    console.warn('[Admin] Firestore err:', e.message);
+    ok = hash === ADMIN_PASS_HASH;
+  }
+  if(ok){
+    isAdmin = true;
+    sessionStorage.setItem('tcgp_admin', hash);
+    showApp();
+  } else {
+    errEl.textContent = '❌ Mot de passe incorrect';
+    document.getElementById('adminPass').value = '';
+  }
 }
+
+function togglePass(){
+  const inp = document.getElementById('adminPass');
+  const btn = document.getElementById('eyeBtn');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
 
 function checkSession(){
   const stored = sessionStorage.getItem('tcgp_admin');
