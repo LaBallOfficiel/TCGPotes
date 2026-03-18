@@ -400,7 +400,7 @@ const FIREBASE_CONFIG={apiKey:"AIzaSyALLbAdXoT3-Vbcy82n1W__yIjdRpsCwZQ",authDoma
 // Il est haché avec SHA-256. Pour générer un nouveau hash :
 // Ouvre une console JS et tape : await crypto.subtle.digest('SHA-256', new TextEncoder().encode('TON_MOT_DE_PASSE'))
 //  puis convertis en hex. Ou utilise : https://emn178.github.io/online-tools/sha256.html
-const ADMIN_PASS_HASH = "REMPLACE_PAR_TON_HASH_SHA256";
+const ADMIN_PASS_HASH = "0aa6de908c851392040382b73a70bf00bd52063e0fa0a6d4443680e585d9da54";
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
@@ -431,8 +431,17 @@ async function tryLogin(){
 
   // Vérifier contre le hash dans Firestore /admin/config
   try{
-    const snap = await db.collection('admin').doc('config').get();
-    if(snap.exists && snap.data().passHash === hash){
+    // Vérifier d'abord contre Firestore (lecture publique /admin/config)
+    let ok = false;
+    try{
+      const snap = await db.collection('admin').doc('config').get();
+      if(snap.exists){ ok = snap.data().passHash === hash; }
+      else { ok = hash === ADMIN_PASS_HASH; }
+    } catch(e){
+      // Firestore inaccessible → fallback hash local
+      ok = hash === ADMIN_PASS_HASH;
+    }
+    if(ok){
       isAdmin = true;
       sessionStorage.setItem('tcgp_admin', hash);
       showApp();
@@ -440,16 +449,6 @@ async function tryLogin(){
       document.getElementById('loginError').textContent = '❌ Mot de passe incorrect';
       document.getElementById('adminPass').value = '';
     }
-  } catch(e){
-    // Fallback sur le hash local si Firestore non accessible
-    if(hash === ADMIN_PASS_HASH){
-      isAdmin = true;
-      sessionStorage.setItem('tcgp_admin', hash);
-      showApp();
-    } else {
-      document.getElementById('loginError').textContent = '❌ Mot de passe incorrect';
-    }
-  }
 }
 
 function checkSession(){
@@ -457,10 +456,8 @@ function checkSession(){
   if(stored){
     // Revérifier contre Firestore
     db.collection('admin').doc('config').get().then(snap=>{
-      if(snap.exists && snap.data().passHash === stored){
-        isAdmin = true;
-        showApp();
-      }
+      const validHash = snap.exists ? snap.data().passHash : ADMIN_PASS_HASH;
+      if(stored === validHash){ isAdmin=true; showApp(); }
     }).catch(()=>{
       if(stored === ADMIN_PASS_HASH){ isAdmin=true; showApp(); }
     });
